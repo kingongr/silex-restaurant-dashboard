@@ -1,5 +1,5 @@
 // DashboardLayout removed - already wrapped by App.tsx routing
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
