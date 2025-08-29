@@ -1,9 +1,10 @@
 // DashboardLayout removed - already wrapped by App.tsx routing
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useScrollY } from '@/hooks/useScrollY';
 import { Plus, Search, Filter, Users, MapPin, Settings, Edit, X, ChevronDown, ChevronUp, Bell } from 'lucide-react';
 import AddTableModal from '@/components/modals/AddTableModal';
 
@@ -19,50 +20,7 @@ export default function Tables() {
   
   // Scroll behavior for floating notification bell
   const bellRef = useRef<HTMLDivElement>(null);
-  const [scrollY, setScrollY] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      // Find the scrollable content container from DashboardLayout
-      const contentContainer = document.querySelector('[class*="overflow-y-auto"]');
-      if (contentContainer) {
-        const currentScrollY = contentContainer.scrollTop || 0;
-        console.log('Tables scroll detected on content container:', currentScrollY);
-        setScrollY(currentScrollY);
-      } else {
-        // Fallback to window scroll
-        const currentScrollY = window.scrollY || 
-                              document.documentElement.scrollTop || 
-                              document.body.scrollTop || 0;
-        console.log('Tables scroll detected on window:', currentScrollY);
-        setScrollY(currentScrollY);
-      }
-    };
-
-    // Find the scrollable content container
-    const contentContainer = document.querySelector('[class*="overflow-y-auto"]');
-    
-    if (contentContainer) {
-      // Add scroll listener to the content container
-      contentContainer.addEventListener('scroll', handleScroll, { passive: true });
-      console.log('Tables scroll listener attached to content container');
-    } else {
-      // Fallback to window scroll
-      window.addEventListener('scroll', handleScroll, { passive: true });
-      console.log('Tables scroll listener attached to window');
-    }
-    
-    // Initial call to set position
-    handleScroll();
-    
-    return () => {
-      if (contentContainer) {
-        contentContainer.removeEventListener('scroll', handleScroll);
-      } else {
-        window.removeEventListener('scroll', handleScroll);
-      }
-    };
-  }, []);
+  const scrollY = useScrollY();
 
   // Mock notifications data for table management
   const mockTableNotifications = [
@@ -868,11 +826,12 @@ export default function Tables() {
       {/* Floating Notification Button */}
       <div 
         ref={bellRef}
-        className="fixed bottom-6 right-6 z-50 transition-transform duration-300 ease-out"
-        style={{ 
-          transform: `translateY(${Math.min(scrollY * 0.3, 100)}px)` 
+        className="fixed bottom-6 right-6 z-50"
+        style={{
+          transform: `translateY(${Math.min(scrollY * 0.25, 100)}px)`,
+          transition: 'transform 0.1s ease-out'
         }}
-        title={`Scroll Y: ${scrollY}, Transform: ${Math.min(scrollY * 0.3, 100)}px`}
+        title={`Scroll Y: ${scrollY}, Transform: ${Math.min(scrollY * 0.25, 100)}px`}
       >
         {/* Debug indicator */}
         <div className="absolute -top-8 left-0 bg-red-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap">

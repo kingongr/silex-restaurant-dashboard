@@ -409,6 +409,7 @@ export default function DashboardLayout({ children, currentPage = 'dashboard', o
         <div 
           ref={contentRef} 
           className="h-full pt-16 overflow-y-auto"
+          data-scroll-container
           style={{
             height: '100vh',
             paddingTop: '64px', // Height of top bar

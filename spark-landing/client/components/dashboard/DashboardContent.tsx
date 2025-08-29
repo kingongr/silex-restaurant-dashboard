@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   ShoppingCart, 
   DollarSign, 
@@ -23,6 +23,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { useScrollY } from '../../hooks/useScrollY';
 import EnhancedKPICard from './EnhancedKPICard';
 import AddMenuItemModal from '../modals/AddMenuItemModal';
 import AddOrderModal from '../modals/AddOrderModal';
@@ -96,22 +97,7 @@ export default function DashboardContent({ user }: DashboardContentProps) {
 
   // Scroll behavior for floating notification bell
   const bellRef = useRef<HTMLDivElement>(null);
-  const [scrollY, setScrollY] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      setScrollY(currentScrollY);
-    };
-
-    // Add scroll listener
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    
-    // Initial call to set position
-    handleScroll();
-    
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const scrollY = useScrollY();
 
   const quickActions = [
     {
@@ -458,9 +444,10 @@ export default function DashboardContent({ user }: DashboardContentProps) {
       {/* Floating Notification Button */}
       <div 
         ref={bellRef}
-        className="fixed bottom-6 right-6 z-50 transition-transform duration-300 ease-out"
-        style={{ 
-          transform: `translateY(${Math.min(scrollY * 0.3, 100)}px)` 
+        className="fixed bottom-6 right-6 z-50"
+        style={{
+          transform: `translateY(${Math.min(scrollY * 0.25, 100)}px)`,
+          transition: 'transform 0.1s ease-out'
         }}
       >
         <Button
