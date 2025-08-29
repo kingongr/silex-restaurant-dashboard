@@ -1,0 +1,249 @@
+/** @import must precede all other statements */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /**
+   * Silex Restaurant Management Design System
+   * Premium SaaS theme with Aurora gradient accents
+   */
+  :root {
+    /* Light mode - Premium SaaS */
+    --background: 247 247 251; /* #F7F7FB */
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    /* Aurora gradient primary colors */
+    --primary: 250 73% 64%; /* #7B6CFF */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 243 100% 96%; /* #F3F4FF */
+    --secondary-foreground: 250 73% 64%;
+
+    --muted: 243 100% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 243 100% 96%;
+    --accent-foreground: 250 73% 64%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 243 100% 94%;
+    --input: 243 100% 94%;
+    --ring: 250 73% 64%;
+
+    --radius: 0.625rem; /* 10px */
+
+    /* Sidebar colors */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 250 73% 64%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 243 100% 96%;
+    --sidebar-accent-foreground: 250 73% 64%;
+    --sidebar-border: 243 100% 94%;
+    --sidebar-ring: 250 73% 64%;
+
+    /* Aurora gradient variables */
+    --aurora-start: 250 100% 64%; /* #5B47FF */
+    --aurora-end: 250 73% 72%; /* #7B6CFF */
+  }
+
+  .dark {
+    /* Dark mode - Premium dark SaaS */
+    --background: 15 17 22; /* #0F1116 */
+    --foreground: 210 40% 98%;
+
+    --card: 26 27 35; /* #1A1B23 */
+    --card-foreground: 210 40% 98%;
+
+    --popover: 26 27 35;
+    --popover-foreground: 210 40% 98%;
+
+    /* Aurora gradient primary colors for dark mode */
+    --primary: 250 73% 72%; /* #7B6CFF */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 36 39 56; /* #242738 */
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 36 39 56;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 36 39 56;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 36 39 56;
+    --input: 36 39 56;
+    --ring: 250 73% 72%;
+
+    /* Dark sidebar colors */
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 250 73% 72%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 250 73% 72%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-inter;
+    font-feature-settings: "cv11", "ss01";
+    font-variation-settings: "opsz" 32;
+  }
+
+  /* Set font-family for Inter */
+  .font-inter {
+    font-family: "Inter", sans-serif;
+  }
+}
+
+@layer components {
+  /* Aurora gradient utilities */
+  .aurora-gradient {
+    background: linear-gradient(135deg, #5B47FF 0%, #7B6CFF 100%);
+  }
+
+  .aurora-gradient-subtle {
+    background: linear-gradient(135deg, rgba(91, 71, 255, 0.1) 0%, rgba(123, 108, 255, 0.1) 100%);
+  }
+
+  .aurora-text {
+    background: linear-gradient(135deg, #5B47FF 0%, #7B6CFF 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Glass morphism cards */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .dark .glass-card {
+    background: rgba(26, 27, 35, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Premium button styles */
+  .btn-aurora {
+    @apply aurora-gradient text-white font-medium px-6 py-2.5 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105;
+  }
+
+  .btn-aurora:hover {
+    box-shadow: 0 10px 25px rgba(91, 71, 255, 0.3);
+  }
+
+  /* Card hover effects */
+  .hover-lift {
+    @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+  }
+
+  .hover-lift:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+
+  /* Loading states */
+  .skeleton {
+    @apply animate-pulse bg-muted rounded;
+  }
+
+  /* Typography scale */
+  .text-display {
+    font-size: 3.5rem;
+    line-height: 1;
+    font-weight: 800;
+  }
+
+  .text-heading-1 {
+    font-size: 2.5rem;
+    line-height: 1.2;
+    font-weight: 700;
+  }
+
+  .text-heading-2 {
+    font-size: 2rem;
+    line-height: 1.3;
+    font-weight: 600;
+  }
+
+  .text-heading-3 {
+    font-size: 1.5rem;
+    line-height: 1.4;
+    font-weight: 600;
+  }
+
+  .text-body-large {
+    font-size: 1.125rem;
+    line-height: 1.6;
+    font-weight: 400;
+  }
+
+  .text-body {
+    font-size: 1rem;
+    line-height: 1.5;
+    font-weight: 400;
+  }
+
+  .text-body-small {
+    font-size: 0.875rem;
+    line-height: 1.4;
+    font-weight: 400;
+  }
+
+  .text-caption {
+    font-size: 0.75rem;
+    line-height: 1.3;
+    font-weight: 500;
+  }
+
+  /* Custom modal positioning to center in the content area */
+  .modal-centered-content {
+    position: fixed !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    margin-left: 132px !important; /* Half of expanded sidebar width to center in content area */
+    max-width: calc(100vw - 264px - 2rem) !important;
+    width: calc(100vw - 264px - 2rem) !important;
+  }
+
+  /* When sidebar is collapsed */
+  .sidebar-collapsed .modal-centered-content {
+    margin-left: 32px !important; /* Half of collapsed sidebar width */
+    max-width: calc(100vw - 64px - 2rem) !important;
+    width: calc(100vw - 64px - 2rem) !important;
+  }
+
+  /* Mobile responsive */
+  @media (max-width: 768px) {
+    .modal-centered-content {
+      margin-left: 0 !important;
+      max-width: calc(100vw - 2rem) !important;
+      width: calc(100vw - 2rem) !important;
+    }
+  }
+}

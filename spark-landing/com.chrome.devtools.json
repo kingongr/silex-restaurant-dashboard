@@ -1,0 +1,19 @@
+{
+  "version": "1.0",
+  "workspace": {
+    "name": "Silex Production Debug",
+    "description": "Debug workspace for Silex restaurant dashboard",
+    "root": "./client",
+    "mappings": [
+      {
+        "url": "http://localhost:8080",
+        "path": "./client"
+      }
+    ]
+  },
+  "debugging": {
+    "enableSourceMaps": true,
+    "enableConsoleLogging": true,
+    "enableNetworkInspection": true
+  }
+}
