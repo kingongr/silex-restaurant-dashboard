@@ -665,10 +665,10 @@ export default function Menu() {
         ref={bellRef}
         className="fixed bottom-6 right-6 z-50"
         style={{
-          transform: `translateY(${Math.min(scrollY * 0.8, 300)}px)`,
+          transform: `translateY(${Math.min(scrollY * 1.2, 800)}px)`,
           transition: 'transform 0.15s ease-out'
         }}
-        title={`Scroll Y: ${scrollY}, Transform: ${Math.min(scrollY * 0.8, 300)}px`}
+        title={`Scroll Y: ${scrollY}, Transform: ${Math.min(scrollY * 1.2, 800)}px`}
       >
         {/* Debug indicator */}
         <div className="absolute -top-8 left-0 bg-red-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap">

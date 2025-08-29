@@ -1237,43 +1237,17 @@ export default function Orders() {
         </DialogContent>
       </Dialog>
 
-      {/* Additional content to enable scrolling */}
-      <div className="mt-16 space-y-8">
-        <div className="text-center py-8">
-          <h3 className="text-lg font-semibold text-muted-foreground mb-2">Order Management Tips</h3>
-          <p className="text-sm text-muted-foreground">Scroll down to see more helpful information</p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 6 }, (_, i) => (
-            <Card key={i} className="p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 dark:text-blue-400 text-lg">📋</span>
-                </div>
-                <h4 className="font-medium">Order Tip {i + 1}</h4>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                This is additional content to make the page scrollable so the floating notification bell can demonstrate its scroll behavior.
-              </p>
-            </Card>
-          ))}
-        </div>
-        
-        <div className="text-center py-8">
-          <p className="text-sm text-muted-foreground">End of Orders page - Scroll up to see orders</p>
-        </div>
-      </div>
+
 
       {/* Floating Notification Button */}
       <div 
         ref={bellRef}
         className="fixed bottom-6 right-6 z-50"
         style={{
-          transform: `translateY(${Math.min(scrollY * 0.8, 300)}px)`,
+          transform: `translateY(${Math.min(scrollY * 1.2, 800)}px)`,
           transition: 'transform 0.15s ease-out'
         }}
-        title={`Scroll Y: ${scrollY}, Transform: ${Math.min(scrollY * 0.8, 300)}px`}
+        title={`Scroll Y: ${scrollY}, Transform: ${Math.min(scrollY * 1.2, 800)}px`}
       >
         {/* Debug indicator */}
         <div className="absolute -top-8 left-0 bg-red-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
