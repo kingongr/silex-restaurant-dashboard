@@ -33,6 +33,9 @@ export const useScrollY = () => {
       }
     };
 
+    // Initial call to set position
+    handleScroll();
+
     // Add listeners to all potential scroll sources
     const scrollContainer = document.querySelector('[data-scroll-container]');
     const mainElement = document.querySelector('main');

@@ -446,8 +446,8 @@ export default function DashboardContent({ user }: DashboardContentProps) {
         ref={bellRef}
         className="fixed bottom-6 right-6 z-50"
         style={{
-          transform: `translateY(${Math.min(scrollY * 0.25, 100)}px)`,
-          transition: 'transform 0.1s ease-out'
+          transform: `translateY(${Math.min(scrollY * 0.8, 300)}px)`,
+          transition: 'transform 0.15s ease-out'
         }}
       >
         <Button
