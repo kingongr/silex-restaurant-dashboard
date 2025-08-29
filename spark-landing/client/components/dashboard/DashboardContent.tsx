@@ -97,7 +97,7 @@ export default function DashboardContent({ user }: DashboardContentProps) {
 
   // Scroll behavior for floating notification bell
   const bellRef = useRef<HTMLDivElement>(null);
-  const scrollY = useScrollY();
+  const { scrollY, getAdaptiveScrollTransform } = useScrollY();
 
   const quickActions = [
     {
@@ -446,7 +446,7 @@ export default function DashboardContent({ user }: DashboardContentProps) {
         ref={bellRef}
         className="fixed bottom-6 right-6 z-50"
         style={{
-          transform: `translateY(${Math.min(scrollY * 1.2, 800)}px)`,
+          transform: `translateY(${getAdaptiveScrollTransform()}px)`,
           transition: 'transform 0.15s ease-out'
         }}
       >
