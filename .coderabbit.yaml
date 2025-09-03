@@ -1,0 +1,18 @@
+# .coderabbit.yaml
+coderabbit:
+  review:
+    # Enable reviews for all file types
+    enabled: true
+    
+    # Customize review focus areas
+    focus_areas:
+      - "code_quality"
+      - "security"
+      - "performance"
+      - "best_practices"
+    
+    # Path-specific instructions
+    paths:
+      "client/components/": "Focus on React component best practices and accessibility"
+      "server/": "Review API security and error handling"
+      "*.ts": "Check TypeScript types and interfaces"
