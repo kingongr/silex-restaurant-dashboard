@@ -1,4 +1,13 @@
 import React, { useState } from 'react';
+import { getModalClasses, MODAL_CONFIGS } from '../../utils/modalSizes';
+import { 
+  validateRequired, 
+  getRequiredError, 
+  validateEmail, 
+  getEmailError,
+  validatePhoneNumber,
+  getPhoneError
+} from '../../utils/validation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ShoppingCart, Plus, Minus, X, ChevronDown, ChevronUp, ArrowLeft, Check } from 'lucide-react';
+import { useToast } from '../../hooks/use-toast';
 
 interface AddOrderModalProps {
   isOpen: boolean;
@@ -25,6 +35,7 @@ interface OrderItem {
 type Step = 'create' | 'confirm';
 
 export default function AddOrderModal({ isOpen, onClose, onAdd }: AddOrderModalProps) {
+  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState<Step>('create');
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
@@ -34,6 +45,8 @@ export default function AddOrderModal({ isOpen, onClose, onAdd }: AddOrderModalP
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [selectedMenuItem, setSelectedMenuItem] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const countryCodes = [
     { code: '+1', country: 'US', flag: '🇺🇸', value: '+1-US' },
@@ -72,6 +85,36 @@ export default function AddOrderModal({ isOpen, onClose, onAdd }: AddOrderModalP
       return `${limited.slice(0, 3)}-${limited.slice(3)}`;
     }
     return limited;
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    
+    // Validate required fields
+    if (!validateRequired(customerName)) {
+      newErrors.customerName = getRequiredError(customerName, 'Customer name');
+    }
+    
+    if (!validateRequired(customerPhone)) {
+      newErrors.customerPhone = getRequiredError(customerPhone, 'Phone number');
+    } else if (!validatePhoneNumber(customerPhone)) {
+      newErrors.customerPhone = getPhoneError(customerPhone);
+    }
+    
+    if (customerEmail && !validateEmail(customerEmail)) {
+      newErrors.customerEmail = getEmailError(customerEmail);
+    }
+    
+    if (!validateRequired(selectedTable)) {
+      newErrors.selectedTable = getRequiredError(selectedTable, 'Table selection');
+    }
+    
+    if (orderItems.length === 0) {
+      newErrors.orderItems = 'Please add at least one menu item to the order';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -128,6 +171,17 @@ export default function AddOrderModal({ isOpen, onClose, onAdd }: AddOrderModalP
 
   const handleCreateOrder = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate form before proceeding
+    if (!validateForm()) {
+      toast({
+        title: "Validation Error",
+        description: "Please fix the errors in the form before proceeding.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Move to confirmation step
     setCurrentStep('confirm');
   };
@@ -149,10 +203,17 @@ export default function AddOrderModal({ isOpen, onClose, onAdd }: AddOrderModalP
       onAdd(orderData);
     }
     
-    // Show success message briefly then close
+    // Show success toast
+    toast({
+      title: "Order Created Successfully!",
+      description: `Order for ${customerName} has been created and assigned to ${selectedTable}.`,
+      variant: "default",
+    });
+    
+    // Close modal after showing toast
     setTimeout(() => {
       handleCancel();
-    }, 1000);
+    }, 1500);
   };
 
   const handleBackToCreate = () => {
@@ -169,6 +230,7 @@ export default function AddOrderModal({ isOpen, onClose, onAdd }: AddOrderModalP
     setSelectedMenuItem('');
     setIsCartOpen(false);
     setCurrentStep('create');
+    setErrors({});
     onClose();
   };
 
@@ -178,38 +240,34 @@ export default function AddOrderModal({ isOpen, onClose, onAdd }: AddOrderModalP
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-sm md:max-w-2xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-0 overflow-hidden max-h-[90vh] modal-centered-content">
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="p-6 pb-4 border-b border-gray-100 dark:border-gray-800">
-            <DialogHeader>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#5B47FF] to-[#7B6CFF] rounded-xl flex items-center justify-center shadow-md">
-                  {currentStep === 'confirm' ? (
-                    <Check className="w-5 h-5 text-white" />
-                  ) : (
-                    <ShoppingCart className="w-5 h-5 text-white" />
-                  )}
-                </div>
-                <div>
-                  <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white">
-                    {currentStep === 'create' ? 'Add New Order' : 'Confirm Order'}
-                  </DialogTitle>
-                  <DialogDescription className="text-gray-600 dark:text-gray-400 text-sm">
-                    {currentStep === 'create' 
-                      ? 'Create a new order for a customer with menu items and table assignment.'
-                      : 'Review and confirm the order details before submission.'
-                    }
-                  </DialogDescription>
-                </div>
+      <DialogContent className={getModalClasses('LARGE')}>
+        <div className="p-6 sm:p-8">
+          <DialogHeader className="mb-6 sm:mb-8">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#5B47FF] to-[#7B6CFF] rounded-xl flex items-center justify-center shadow-md">
+                {currentStep === 'confirm' ? (
+                  <Check className="w-5 h-5 text-white" />
+                ) : (
+                  <ShoppingCart className="w-5 h-5 text-white" />
+                )}
               </div>
-            </DialogHeader>
-          </div>
+              <div>
+                <DialogTitle className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
+                  {currentStep === 'create' ? 'Add New Order' : 'Confirm Order'}
+                </DialogTitle>
+                <DialogDescription className="text-gray-600 dark:text-gray-400">
+                  {currentStep === 'create' 
+                    ? 'Create a new order for a customer with menu items and table assignment.'
+                    : 'Review and confirm the order details before submission.'
+                  }
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
 
-          {/* Content - Scrollable */}
-          <div className="flex-1 overflow-y-auto p-6 max-h-[60vh]">
+          <div className="space-y-6">
             {currentStep === 'create' ? (
-              <form onSubmit={handleCreateOrder} className="space-y-6">
+              <form onSubmit={handleCreateOrder}>
                 {/* Customer Information */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
@@ -220,9 +278,16 @@ export default function AddOrderModal({ isOpen, onClose, onAdd }: AddOrderModalP
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
                       placeholder="Enter customer name"
-                      className="w-full p-3 border-2 border-[#7B6CFF]/30 dark:border-[#7B6CFF]/20 rounded-xl focus:border-[#5B47FF] transition-colors duration-200 bg-gray-50 dark:bg-gray-800/50"
+                      className={`w-full p-3 border-2 rounded-xl focus:border-[#5B47FF] transition-colors duration-200 bg-gray-50 dark:bg-gray-800/50 ${
+                        errors.customerName 
+                          ? 'border-red-500 focus:border-red-500' 
+                          : 'border-[#7B6CFF]/30 dark:border-[#7B6CFF]/20'
+                      }`}
                       required
                     />
+                    {errors.customerName && (
+                      <p className="text-sm text-red-500 mt-1">{errors.customerName}</p>
+                    )}
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
@@ -233,8 +298,15 @@ export default function AddOrderModal({ isOpen, onClose, onAdd }: AddOrderModalP
                       value={customerEmail}
                       onChange={(e) => setCustomerEmail(e.target.value)}
                       placeholder="Enter email address"
-                      className="w-full p-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-[#5B47FF] transition-colors duration-200 bg-gray-50 dark:bg-gray-800/50"
+                      className={`w-full p-3 border-2 rounded-xl focus:border-[#5B47FF] transition-colors duration-200 bg-gray-50 dark:bg-gray-800/50 ${
+                        errors.customerEmail 
+                          ? 'border-red-500 focus:border-red-500' 
+                          : 'border-gray-200 dark:border-gray-700'
+                      }`}
                     />
+                    {errors.customerEmail && (
+                      <p className="text-sm text-red-500 mt-1">{errors.customerEmail}</p>
+                    )}
                   </div>
                 </div>
 
@@ -263,10 +335,17 @@ export default function AddOrderModal({ isOpen, onClose, onAdd }: AddOrderModalP
                       value={customerPhone}
                       onChange={handlePhoneChange}
                       placeholder="XXX-XXX-XXXX"
-                      className="flex-1 p-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-[#5B47FF] transition-colors duration-200 bg-gray-50 dark:bg-gray-800/50"
+                      className={`flex-1 p-3 border-2 rounded-xl focus:border-[#5B47FF] transition-colors duration-200 bg-gray-50 dark:bg-gray-800/50 ${
+                        errors.customerPhone 
+                          ? 'border-red-500 focus:border-red-500' 
+                          : 'border-gray-200 dark:border-gray-700'
+                      }`}
                       maxLength={12}
                     />
                   </div>
+                  {errors.customerPhone && (
+                    <p className="text-sm text-red-500 mt-1">{errors.customerPhone}</p>
+                  )}
                 </div>
 
                 {/* Table Selection */}
@@ -275,7 +354,11 @@ export default function AddOrderModal({ isOpen, onClose, onAdd }: AddOrderModalP
                     Table
                   </Label>
                   <Select value={selectedTable} onValueChange={setSelectedTable} required>
-                    <SelectTrigger className="w-full p-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-[#5B47FF] transition-colors duration-200 bg-gray-50 dark:bg-gray-800/50">
+                    <SelectTrigger className={`w-full p-3 border-2 rounded-xl focus:border-[#5B47FF] transition-colors duration-200 bg-gray-50 dark:bg-gray-800/50 ${
+                      errors.selectedTable 
+                        ? 'border-red-500 focus:border-red-500' 
+                        : 'border-gray-200 dark:border-gray-700'
+                    }`}>
                       <SelectValue placeholder="Select a table" />
                     </SelectTrigger>
                     <SelectContent>
@@ -286,6 +369,9 @@ export default function AddOrderModal({ isOpen, onClose, onAdd }: AddOrderModalP
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.selectedTable && (
+                    <p className="text-sm text-red-500 mt-1">{errors.selectedTable}</p>
+                  )}
                 </div>
 
                 {/* Menu Items Selection with Thumbnails */}
@@ -293,6 +379,9 @@ export default function AddOrderModal({ isOpen, onClose, onAdd }: AddOrderModalP
                   <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 block">
                     Add Menu Items
                   </Label>
+                  {errors.orderItems && (
+                    <p className="text-sm text-red-500 mb-2">{errors.orderItems}</p>
+                  )}
                   <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 mb-4 max-h-[40vh] overflow-y-auto pr-2">
                     {menuItems.map((item) => (
                       <div

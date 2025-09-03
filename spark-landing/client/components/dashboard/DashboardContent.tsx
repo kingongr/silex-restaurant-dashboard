@@ -354,7 +354,7 @@ export default function DashboardContent({ user }: DashboardContentProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Bell className="w-5 h-5" />
-              Dashboard Notifications Center
+              Notifications Center
               {unreadCount > 0 && (
                 <Badge className="ml-2 bg-red-500 text-white">
                   {unreadCount} new
@@ -368,7 +368,7 @@ export default function DashboardContent({ user }: DashboardContentProps) {
               <div className="text-center py-8 text-muted-foreground">
                 <Bell className="w-12 h-12 mx-auto mb-4 opacity-50" />
                 <p className="text-lg font-medium">No notifications yet</p>
-                <p className="text-sm">You'll see important dashboard updates here</p>
+                <p className="text-sm">You'll see important updates here</p>
               </div>
             ) : (
               mockDashboardNotifications.map((notification) => {
@@ -431,8 +431,15 @@ export default function DashboardContent({ user }: DashboardContentProps) {
               variant="outline" 
               size="sm"
               onClick={() => {
-                // Mark all as read logic would go here
-                console.log('Mark all as read');
+                // Mark all as read logic
+                const updatedNotifications = mockDashboardNotifications.map(notification => ({
+                  ...notification,
+                  isRead: true
+                }));
+                // In a real app, this would update the state and send to backend
+                console.log('Mark all as read clicked');
+                // For now, just log the action
+                alert('All notifications marked as read!');
               }}
             >
               Mark all as read

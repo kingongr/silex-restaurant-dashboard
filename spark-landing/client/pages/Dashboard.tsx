@@ -22,8 +22,7 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  XCircle,
-  Bell
+  XCircle
 } from 'lucide-react';
 
 // Mock data for demonstration
@@ -103,49 +102,6 @@ const getStatusColor = (status: string) => {
 export default function Dashboard() {
   const [isAddOrderModalOpen, setIsAddOrderModalOpen] = useState(false);
   const [isAddReservationModalOpen, setIsAddReservationModalOpen] = useState(false);
-  const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
-
-  // Mock notifications data for dashboard
-  const mockDashboardNotifications = [
-    {
-      id: '1',
-      type: 'revenue_update',
-      title: 'Revenue Milestone! 🎉',
-      message: 'Daily revenue has exceeded $2,500 for the first time this week.',
-      time: '5 minutes ago',
-      isRead: false,
-      priority: 'high'
-    },
-    {
-      id: '2',
-      type: 'order_spike',
-      title: 'Order Volume Alert 📈',
-      message: 'Orders have increased by 25% in the last hour. Consider adding staff.',
-      time: '15 minutes ago',
-      isRead: false,
-      priority: 'medium'
-    },
-    {
-      id: '3',
-      type: 'table_status',
-      title: 'Table Availability Update 🍽️',
-      message: 'Table 8 is now available after cleaning. Ready for new customers.',
-      time: '30 minutes ago',
-      isRead: true,
-      priority: 'low'
-    },
-    {
-      id: '4',
-      type: 'staff_reminder',
-      title: 'Staff Break Reminder ⏰',
-      message: 'Sarah Johnson is due for her break in 10 minutes.',
-      time: '1 hour ago',
-      isRead: true,
-      priority: 'medium'
-    }
-  ];
-
-  const unreadCount = mockDashboardNotifications.filter(n => !n.isRead).length;
 
   return (
     <>
@@ -310,18 +266,9 @@ export default function Dashboard() {
         onClose={() => setIsAddReservationModalOpen(false)}
       />
 
-      {/* Floating Notification Bell */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <Button
-          onClick={() => setIsNotificationsModalOpen(true)}
-          className="relative h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-        >
-          <Bell className="w-6 h-6 text-white" />
-          <div className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0 animate-pulse">
-            {unreadCount}
-          </div>
-        </Button>
-      </div>
+
+
+
     </>
   );
 }

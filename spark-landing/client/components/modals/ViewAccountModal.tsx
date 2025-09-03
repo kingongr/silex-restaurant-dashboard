@@ -1,4 +1,5 @@
 import React from 'react';
+import { getModalClasses, MODAL_CONFIGS } from '../../utils/modalSizes';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -24,7 +25,7 @@ export default function ViewAccountModal({ isOpen, onClose }: ViewAccountModalPr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl lg:max-w-[calc(4xl-20%)] bg-white dark:bg-[#1B2030] border-gray-200 dark:border-gray-800 rounded-2xl p-0 overflow-hidden max-h-[85vh] overflow-y-auto modal-centered-content">
+      <DialogContent className={getModalClasses('DETAIL')}>
         <div className="p-6 sm:p-8">
           <DialogHeader className="mb-6 sm:mb-8">
             <div className="flex items-center gap-3">
@@ -32,7 +33,7 @@ export default function ViewAccountModal({ isOpen, onClose }: ViewAccountModalPr
                 <User className="w-5 h-5 text-white" />
               </div>
               <div>
-                <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white">
+                <DialogTitle className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
                   Account Information
                 </DialogTitle>
                 <DialogDescription className="text-gray-600 dark:text-gray-400">

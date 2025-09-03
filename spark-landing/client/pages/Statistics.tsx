@@ -1,5 +1,5 @@
 // DashboardLayout removed - already wrapped by App.tsx routing
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useScrollY } from '@/hooks/useScrollY';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -41,7 +40,8 @@ import {
   ChevronUp,
   ChevronDown,
   Star,
-  Bell
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 
 // Import statistics components
@@ -51,21 +51,48 @@ import StatisticsPerformance from '../components/StatisticsPerformance';
 import StatisticsReservations from '../components/StatisticsReservations';
 import StatisticsMenuAnalysis from '../components/StatisticsMenuAnalysis';
 import StatisticsStaff from '../components/StatisticsStaff';
+import { useToast } from '../hooks/use-toast';
 
 export default function Statistics() {
+  const { toast } = useToast();
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [activeTab, setActiveTab] = useState('overview');
   const [compareEnabled, setCompareEnabled] = useState(false);
   const [isInsightsExpanded, setIsInsightsExpanded] = useState(false);
-  const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
-  
   // Filter states
   const [orderTypeFilter, setOrderTypeFilter] = useState<string | null>(null);
   const [daypartFilter, setDaypartFilter] = useState<string | null>(null);
   
-  // Scroll behavior for floating notification bell
-  const bellRef = useRef<HTMLDivElement>(null);
-  const { scrollY, getAdaptiveScrollTransform } = useScrollY();
+  // Helper functions for status display
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
+      case 'pending':
+        return <Clock className="w-4 h-4 text-yellow-600" />;
+      case 'in_progress':
+        return <Activity className="w-4 h-4 text-blue-600" />;
+      case 'cancelled':
+        return <XCircle className="w-4 h-4 text-red-600" />;
+      default:
+        return <Clock className="w-4 h-4 text-gray-600" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-green-900 dark:text-yellow-300';
+      case 'in_progress':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+    }
+  };
   
   // Dynamic data based on period and filters
   const getPeriodLabel = (period: string) => {
@@ -90,49 +117,7 @@ export default function Statistics() {
     }
   };
 
-  // Mock notifications data for statistics
-  const mockStatisticsNotifications = [
-    {
-      id: '1',
-      type: 'performance_alert',
-      title: 'Performance Alert 📊',
-      message: 'Your restaurant efficiency has improved by 8% this month. Great job team!',
-      time: '2 hours ago',
-      isRead: false,
-      priority: 'low'
-    },
-    {
-      id: '2',
-      type: 'revenue_milestone',
-      title: 'Revenue Milestone! 🎉',
-      message: 'Congratulations! You\'ve reached $45K monthly revenue for the first time.',
-      time: '1 day ago',
-      isRead: false,
-      priority: 'high'
-    },
-    {
-      id: '3',
-      type: 'trend_analysis',
-      title: 'Trend Analysis 📈',
-      message: 'Weekend orders are up 22% compared to last month. Consider increasing weekend staff.',
-      time: '3 days ago',
-      isRead: true,
-      priority: 'medium'
-    },
-    {
-      id: '4',
-      type: 'customer_feedback',
-      title: 'Customer Feedback Update ⭐',
-      message: 'Average customer rating improved to 4.8/5. Keep up the excellent service!',
-      time: '1 week ago',
-      isRead: true,
-      priority: 'low'
-    }
-  ];
-
-  const unreadCount = mockStatisticsNotifications.filter(n => !n.isRead).length;
-
-  // Comprehensive data structure that updates based on period and filters
+    // Comprehensive data structure that updates based on period and filters
   const getInsightsData = () => {
     const baseData: Record<string, Record<string, { value: string; growth: number; period: string }>> = {
       overview: {
@@ -253,21 +238,6 @@ export default function Statistics() {
           
             
             <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsNotificationsModalOpen(true)}
-                className="gap-2"
-              >
-                <Bell className="w-4 h-4" />
-                Notifications
-                {unreadCount > 0 && (
-                  <Badge className="ml-2 bg-red-500 text-white">
-                    {unreadCount} new
-                  </Badge>
-                )}
-              </Button>
-              
               <Button
                 variant="outline"
                 size="sm"
@@ -1287,125 +1257,9 @@ export default function Statistics() {
         </div>
       </div>
 
-      {/* Statistics Notifications Modal */}
-      <Dialog open={isNotificationsModalOpen} onOpenChange={setIsNotificationsModalOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Bell className="w-5 h-5" />
-              Statistics Notifications Center
-              {unreadCount > 0 && (
-                <Badge className="ml-2 bg-red-500 text-white">
-                  {unreadCount} new
-                </Badge>
-              )}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-            {mockStatisticsNotifications.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Bell className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium">No notifications yet</p>
-                <p className="text-sm">You'll see important statistics updates here</p>
-              </div>
-            ) : (
-              mockStatisticsNotifications.map((notification) => {
-                const priorityColors = {
-                  high: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700',
-                  medium: 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700',
-                  low: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700'
-                };
-                
-                const priorityIcons = {
-                  high: '🔴',
-                  medium: '🟡',
-                  low: '🔵'
-                };
-                
-                return (
-                  <div 
-                    key={notification.id}
-                    className={`p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer ${
-                      !notification.isRead ? priorityColors[notification.priority as keyof typeof priorityColors] : ''
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="mt-1 text-lg">
-                        {priorityIcons[notification.priority as keyof typeof priorityIcons]}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-semibold text-foreground">
-                            {notification.title}
-                          </h4>
-                          <span className="text-xs text-muted-foreground">
-                            {notification.time}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {notification.message}
-                        </p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Badge variant="outline" className="text-xs">
-                            {notification.priority} priority
-                          </Badge>
-                        </div>
-                      </div>
-                      {!notification.isRead && (
-                        <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2"></div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-          
-          <div className="flex items-center justify-between pt-4 border-t border-border">
-            <p className="text-sm text-muted-foreground">
-              {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
-            </p>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => {
-                // Mark all as read logic would go here
-                console.log('Mark all as read');
-              }}
-            >
-              Mark all as read
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
-      {/* Floating Notification Button */}
-      <div 
-        ref={bellRef}
-        className="fixed bottom-6 right-6 z-50"
-        style={{
-          transform: `translateY(${getAdaptiveScrollTransform()}px)`,
-          transition: 'transform 0.15s ease-out'
-        }}
-        title={`Scroll Y: ${scrollY}, Adaptive Transform: ${getAdaptiveScrollTransform()}px`}
-      >
-        {/* Debug indicator */}
-        <div className="absolute -top-8 left-0 bg-red-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-          Scroll: {scrollY}px
-        </div>
-        <Button
-          onClick={() => setIsNotificationsModalOpen(true)}
-          className="relative h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-blue-500 to-green-600 hover:from-blue-600 hover:to-green-700"
-        >
-          <Bell className="w-6 h-6 text-white" />
-          {unreadCount > 0 && (
-            <Badge className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0 animate-pulse">
-              {unreadCount}
-            </Badge>
-          )}
-        </Button>
-      </div>
+
+
     </>
   );
 }

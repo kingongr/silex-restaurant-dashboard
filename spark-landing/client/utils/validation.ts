@@ -140,3 +140,159 @@ export const getRequiredError = (value: string, fieldName: string): string => {
   }
   return '';
 };
+
+/**
+ * Enhanced validation functions for common form fields
+ */
+
+/**
+ * Category Validation
+ * Ensures category is selected or custom category is provided
+ */
+export const validateCategory = (category: string, customCategory?: string): boolean => {
+  if (category === 'custom') {
+    return customCategory ? customCategory.trim().length > 0 : false;
+  }
+  return category.trim().length > 0;
+};
+
+export const getCategoryError = (category: string, customCategory?: string): string => {
+  if (!validateCategory(category, customCategory)) {
+    if (category === 'custom') {
+      return 'Please enter a custom category name';
+    }
+    return 'Please select a category';
+  }
+  return '';
+};
+
+/**
+ * Description Validation
+ * Ensures description meets minimum length requirements
+ */
+export const validateDescription = (description: string, minLength: number = 10): boolean => {
+  return description.trim().length >= minLength;
+};
+
+export const getDescriptionError = (description: string, minLength: number = 10): string => {
+  if (!validateDescription(description, minLength)) {
+    return `Description must be at least ${minLength} characters long`;
+  }
+  return '';
+};
+
+/**
+ * Table Number Validation
+ * Ensures table number is a positive integer
+ */
+export const validateTableNumber = (tableNumber: string | number): boolean => {
+  const num = typeof tableNumber === 'string' ? parseInt(tableNumber) : tableNumber;
+  return !isNaN(num) && num > 0 && Number.isInteger(num);
+};
+
+export const getTableNumberError = (tableNumber: string | number): string => {
+  if (!validateTableNumber(tableNumber)) {
+    return 'Please enter a valid table number (positive integer)';
+  }
+  return '';
+};
+
+/**
+ * Capacity Validation
+ * Ensures capacity is a positive integer within reasonable range
+ */
+export const validateCapacity = (capacity: string | number, min: number = 1, max: number = 20): boolean => {
+  const num = typeof capacity === 'string' ? parseInt(capacity) : capacity;
+  return !isNaN(num) && num >= min && num <= max && Number.isInteger(num);
+};
+
+export const getCapacityError = (capacity: string | number, min: number = 1, max: number = 20): string => {
+  if (!validateCapacity(capacity, min, max)) {
+    return `Capacity must be between ${min} and ${max} people`;
+  }
+  return '';
+};
+
+/**
+ * Date Validation
+ * Ensures date is not in the past
+ */
+export const validateFutureDate = (date: string): boolean => {
+  const selectedDate = new Date(date);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return selectedDate >= today;
+};
+
+export const getFutureDateError = (date: string): string => {
+  if (!validateFutureDate(date)) {
+    return 'Please select a future date';
+  }
+  return '';
+};
+
+/**
+ * Time Validation
+ * Ensures time is within business hours (configurable)
+ */
+export const validateBusinessHours = (
+  time: string, 
+  openHour: number = 6, 
+  closeHour: number = 23
+): boolean => {
+  const [hours, minutes] = time.split(':').map(Number);
+  const timeInMinutes = hours * 60 + minutes;
+  const openInMinutes = openHour * 60;
+  const closeInMinutes = closeHour * 60;
+  
+  return timeInMinutes >= openInMinutes && timeInMinutes <= closeInMinutes;
+};
+
+export const getBusinessHoursError = (
+  time: string, 
+  openHour: number = 6, 
+  closeHour: number = 23
+): string => {
+  if (!validateBusinessHours(time, openHour, closeHour)) {
+    return `Please select a time between ${openHour}:00 and ${closeHour}:00`;
+  }
+  return '';
+};
+
+/**
+ * Party Size Validation
+ * Ensures party size is within reasonable range
+ */
+export const validatePartySize = (partySize: string | number, min: number = 1, max: number = 20): boolean => {
+  const num = typeof partySize === 'string' ? parseInt(partySize) : partySize;
+  return !isNaN(num) && num >= min && num <= max && Number.isInteger(num);
+};
+
+export const getPartySizeError = (partySize: string | number, min: number = 1, max: number = 20): string => {
+  if (!validatePartySize(partySize, min, max)) {
+    return `Party size must be between ${min} and ${max} people`;
+  }
+  return '';
+};
+
+/**
+ * Form validation helper that returns all errors for a form
+ */
+export interface ValidationResult {
+  isValid: boolean;
+  errors: Record<string, string>;
+}
+
+export const validateForm = (validations: Record<string, { value: any; validator: (value: any) => boolean; errorMessage: string }>): ValidationResult => {
+  const errors: Record<string, string> = {};
+  let isValid = true;
+
+  Object.entries(validations).forEach(([fieldName, validation]) => {
+    if (!validation.validator(validation.value)) {
+      errors[fieldName] = validation.errorMessage;
+      isValid = false;
+    }
+  });
+
+  return { isValid, errors };
+};

@@ -1,17 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 // DashboardLayout removed - already wrapped by App.tsx routing
 import AddMenuItemModal from '@/components/modals/AddMenuItemModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { 
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { useScrollY } from '@/hooks/useScrollY';
 import { 
   Plus, 
   Search, 
@@ -26,8 +19,7 @@ import {
   DollarSign,
   Star,
   Leaf,
-  AlertTriangle,
-  Bell
+  AlertTriangle
 } from 'lucide-react';
 
 interface MenuItem {
@@ -162,58 +154,15 @@ const mockMenuItems: MenuItem[] = [
 
 export default function Menu() {
   const [isAddMenuItemModalOpen, setIsAddMenuItemModalOpen] = useState(false);
-  const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
   const [menuItems, setMenuItems] = useState<MenuItem[]>(mockMenuItems);
   const [selectedCategory, setSelectedCategory] = useState('All Items');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filterAvailable, setFilterAvailable] = useState(false);
   
-  // Scroll behavior for floating notification bell
-  const bellRef = useRef<HTMLDivElement>(null);
-  const { scrollY, getAdaptiveScrollTransform } = useScrollY();
-  
-  // Mock notifications data for menu management
-  const mockMenuNotifications = [
-    {
-      id: '1',
-      type: 'item_added',
-      title: 'New Menu Item Added! 🆕',
-      message: 'Grilled Atlantic Salmon has been added to the Main Courses category.',
-      time: '1 hour ago',
-      isRead: false,
-      priority: 'medium'
-    },
-    {
-      id: '2',
-      type: 'item_unavailable',
-      title: 'Item Unavailable Alert! ⚠️',
-      message: 'Chocolate Lava Cake is now marked as unavailable due to ingredient shortage.',
-      time: '3 hours ago',
-      isRead: false,
-      priority: 'high'
-    },
-    {
-      id: '3',
-      type: 'category_update',
-      title: 'Menu Category Updated! 📝',
-      message: 'New "Specials" category has been created for seasonal items.',
-      time: '1 day ago',
-      isRead: true,
-      priority: 'low'
-    },
-    {
-      id: '4',
-      type: 'popular_item',
-      title: 'Popular Item Alert! 🔥',
-      message: 'Classic Caesar Salad has reached 200+ orders this month.',
-      time: '2 days ago',
-      isRead: true,
-      priority: 'medium'
-    }
-  ];
 
-  const unreadCount = mockMenuNotifications.filter(n => !n.isRead).length;
+  
+
   
   // Dynamic categories that can be updated when new items are added
   const [categories, setCategories] = useState(['All Items', 'Appetizers', 'Main Courses', 'Desserts', 'Beverages', 'Sides', 'Specials']);
@@ -311,22 +260,6 @@ export default function Menu() {
           </div>
           
           <div className="flex items-center gap-2">
-            {/* Notifications Button */}
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setIsNotificationsModalOpen(true)}
-              className="relative"
-            >
-              <Bell className="w-4 h-4 mr-2" />
-              Notifications
-              {unreadCount > 0 && (
-                <Badge className="ml-2 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0">
-                  {unreadCount}
-                </Badge>
-              )}
-            </Button>
-            
             <div className="flex border rounded-lg">
               <Button 
                 variant={viewMode === 'grid' ? 'default' : 'ghost'}
@@ -567,125 +500,9 @@ export default function Menu() {
         onAdd={handleAddMenuItem}
       />
 
-      {/* Notifications Modal */}
-      <Dialog open={isNotificationsModalOpen} onOpenChange={setIsNotificationsModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Bell className="w-5 h-5" />
-              Menu Notifications Center
-              {unreadCount > 0 && (
-                <Badge className="ml-2 bg-red-500 text-white">
-                  {unreadCount} new
-                </Badge>
-              )}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-            {mockMenuNotifications.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Bell className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium">No notifications yet</p>
-                <p className="text-sm">You'll see important menu updates here</p>
-              </div>
-            ) : (
-              mockMenuNotifications.map((notification) => {
-                const priorityColors = {
-                  high: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700',
-                  medium: 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700',
-                  low: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700'
-                };
-                
-                const priorityIcons = {
-                  high: '🔴',
-                  medium: '🟡',
-                  low: '🔵'
-                };
-                
-                return (
-                  <div 
-                    key={notification.id}
-                    className={`p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer ${
-                      !notification.isRead ? priorityColors[notification.priority as keyof typeof priorityColors] : ''
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="mt-1 text-lg">
-                        {priorityIcons[notification.priority as keyof typeof priorityIcons]}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-semibold text-foreground">
-                            {notification.title}
-                          </h4>
-                          <span className="text-xs text-muted-foreground">
-                            {notification.time}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {notification.message}
-                        </p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Badge variant="outline" className="text-xs">
-                            {notification.priority} priority
-                          </Badge>
-                        </div>
-                      </div>
-                      {!notification.isRead && (
-                        <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2"></div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-          
-          <div className="flex items-center justify-between pt-4 border-t border-border">
-            <p className="text-sm text-muted-foreground">
-              {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
-            </p>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => {
-                // Mark all as read logic would go here
-                console.log('Mark all as read');
-              }}
-            >
-              Mark all as read
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
-      {/* Floating Notification Button */}
-      <div 
-        ref={bellRef}
-        className="fixed bottom-6 right-6 z-50"
-        style={{
-          transform: `translateY(${getAdaptiveScrollTransform()}px)`,
-          transition: 'transform 0.15s ease-out'
-        }}
-        title={`Scroll Y: ${scrollY}, Adaptive Transform: ${getAdaptiveScrollTransform()}px`}
-      >
-        {/* Debug indicator */}
-        <div className="absolute -top-8 left-0 bg-red-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-          Scroll: {scrollY}px
-        </div>
-        <Button
-          onClick={() => setIsNotificationsModalOpen(true)}
-          className="relative h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700"
-        >
-          <Bell className="w-6 h-6 text-white" />
-          {unreadCount > 0 && (
-            <Badge className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0 animate-pulse">
-              {unreadCount}
-            </Badge>
-          )}
-        </Button>
-      </div>
+
+
     </>
   );
 }

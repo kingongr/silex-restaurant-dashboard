@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getModalClasses, MODAL_CONFIGS } from '../../utils/modalSizes';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -31,14 +32,62 @@ export default function AddTableModal({ isOpen, onClose }: AddTableModalProps) {
     isAccessible: false,
     hasChargingPorts: false
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
-    console.log('Adding table:', formData);
-    onClose();
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    
+    // Validate required fields
+    if (!formData.tableNumber?.trim()) {
+      newErrors.tableNumber = 'Table number is required';
+    }
+    
+    if (!formData.capacity) {
+      newErrors.capacity = 'Capacity is required';
+    }
+    
+    if (!formData.tableType) {
+      newErrors.tableType = 'Table type is required';
+    }
+    
+    if (!formData.location) {
+      newErrors.location = 'Location is required';
+    }
+    
+    // Validate table number format (alphanumeric)
+    if (formData.tableNumber && !/^[a-zA-Z0-9]+$/.test(formData.tableNumber.trim())) {
+      newErrors.tableNumber = 'Table number can only contain letters and numbers';
+    }
+    
+    // Validate capacity is a positive number
+    if (formData.capacity && !/^\d+$/.test(formData.capacity)) {
+      newErrors.capacity = 'Capacity must be a positive number';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSave = async () => {
+    if (!validateForm()) {
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      console.log('Adding table:', formData);
+      onClose();
+    } catch (error) {
+      console.error('Error adding table:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const tableTypes = [
@@ -81,7 +130,7 @@ export default function AddTableModal({ isOpen, onClose }: AddTableModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-              <DialogContent className="max-w-2xl lg:max-w-[calc(4xl-25px-20%)] bg-white dark:bg-[#1B2030] border-gray-200 dark:border-gray-800 rounded-2xl p-0 overflow-hidden max-h-[85vh] overflow-y-auto modal-centered-content">
+              <DialogContent className={getModalClasses('FORM')}>
         <div className="p-6 sm:p-8">
           <DialogHeader className="mb-6 sm:mb-8">
             <div className="flex items-center gap-3">
@@ -115,14 +164,17 @@ export default function AddTableModal({ isOpen, onClose }: AddTableModalProps) {
                     value={formData.tableNumber}
                     onChange={(e) => handleInputChange('tableNumber', e.target.value)}
                     placeholder="e.g., 12, A1, VIP1"
-                    className="w-full"
+                    className={`w-full ${errors.tableNumber ? 'border-red-500 focus:border-red-500' : ''}`}
                   />
+                  {errors.tableNumber && (
+                    <p className="text-sm text-red-500 mt-1">{errors.tableNumber}</p>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="capacity">Capacity *</Label>
                   <Select value={formData.capacity} onValueChange={(value) => handleInputChange('capacity', value)}>
-                    <SelectTrigger>
+                    <SelectTrigger className={errors.capacity ? 'border-red-500 focus:border-red-500' : ''}>
                       <SelectValue placeholder="Select capacity" />
                     </SelectTrigger>
                     <SelectContent>
@@ -133,6 +185,9 @@ export default function AddTableModal({ isOpen, onClose }: AddTableModalProps) {
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.capacity && (
+                    <p className="text-sm text-red-500 mt-1">{errors.capacity}</p>
+                  )}
                 </div>
               </div>
 
@@ -140,7 +195,7 @@ export default function AddTableModal({ isOpen, onClose }: AddTableModalProps) {
                 <div className="space-y-2">
                   <Label htmlFor="tableType">Table Type</Label>
                   <Select value={formData.tableType} onValueChange={(value) => handleInputChange('tableType', value)}>
-                    <SelectTrigger>
+                    <SelectTrigger className={errors.tableType ? 'border-red-500 focus:border-red-500' : ''}>
                       <SelectValue placeholder="Select table type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -151,12 +206,15 @@ export default function AddTableModal({ isOpen, onClose }: AddTableModalProps) {
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.tableType && (
+                    <p className="text-sm text-red-500 mt-1">{errors.tableType}</p>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="location">Location *</Label>
                   <Select value={formData.location} onValueChange={(value) => handleInputChange('location', value)}>
-                    <SelectTrigger>
+                    <SelectTrigger className={errors.location ? 'border-red-500 focus:border-red-500' : ''}>
                       <SelectValue placeholder="Select location" />
                     </SelectTrigger>
                     <SelectContent>
@@ -167,6 +225,9 @@ export default function AddTableModal({ isOpen, onClose }: AddTableModalProps) {
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.location && (
+                    <p className="text-sm text-red-500 mt-1">{errors.location}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -381,9 +442,10 @@ export default function AddTableModal({ isOpen, onClose }: AddTableModalProps) {
             </Button>
             <Button
               onClick={handleSave}
-              className="px-8 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:opacity-90 transition-opacity duration-200 shadow-lg"
+              disabled={isSubmitting}
+              className="px-8 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:opacity-90 transition-opacity duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Add Table
+              {isSubmitting ? 'Adding...' : 'Add Table'}
             </Button>
           </div>
         </div>

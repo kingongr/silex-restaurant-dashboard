@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getModalClasses, MODAL_CONFIGS } from '../../utils/modalSizes';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -7,6 +8,8 @@ import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Separator } from '../ui/separator';
 import { Calendar, Clock, Users, User, Phone, MapPin, Star, AlertCircle } from 'lucide-react';
+import { validateRequired, getRequiredError, validateEmail, getEmailError, validatePhoneNumber, getPhoneError } from '../../utils/validation';
+import { useToast } from '../../hooks/use-toast';
 
 interface BookTableModalProps {
   isOpen: boolean;
@@ -14,6 +17,7 @@ interface BookTableModalProps {
 }
 
 export default function BookTableModal({ isOpen, onClose }: BookTableModalProps) {
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
@@ -30,6 +34,8 @@ export default function BookTableModal({ isOpen, onClose }: BookTableModalProps)
   const [phoneError, setPhoneError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [availableTables, setAvailableTables] = useState<Array<{id: string, number: number, capacity: number, type: string}>>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -105,9 +111,78 @@ export default function BookTableModal({ isOpen, onClose }: BookTableModalProps)
     }
   }, [formData.reservationTime, formData.partySize]);
 
-  const handleSave = () => {
-    console.log('Booking table:', formData);
-    onClose();
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    
+    // Validate required fields
+    if (!formData.customerName?.trim()) {
+      newErrors.customerName = 'Customer name is required';
+    }
+    
+    if (!formData.customerPhone?.trim()) {
+      newErrors.customerPhone = 'Phone number is required';
+    } else if (!validatePhoneNumber(formData.customerPhone)) {
+      newErrors.customerPhone = 'Please enter a valid 10-digit phone number';
+    }
+    
+    if (formData.customerEmail && !validateEmail(formData.customerEmail)) {
+      newErrors.customerEmail = 'Please enter a valid email address';
+    }
+    
+    if (!formData.partySize) {
+      newErrors.partySize = 'Party size is required';
+    }
+    
+    if (!formData.reservationDate) {
+      newErrors.reservationDate = 'Reservation date is required';
+    }
+    
+    if (!formData.reservationTime) {
+      newErrors.reservationTime = 'Reservation time is required';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSave = async () => {
+    if (!validateForm()) {
+      toast({
+        title: "Validation Error",
+        description: "Please fix the errors in the form before submitting.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      console.log('Booking table:', formData);
+      
+      // Show success toast
+      toast({
+        title: "Table Booked Successfully!",
+        description: `Reservation for ${formData.customerName} on ${formData.reservationDate} at ${formData.reservationTime} has been confirmed.`,
+        variant: "default",
+      });
+      
+      // Close modal after showing toast
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    } catch (error) {
+      console.error('Error booking table:', error);
+      
+      // Show error toast
+      toast({
+        title: "Error",
+        description: "Failed to book table. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const partySizes = [
@@ -173,7 +248,7 @@ export default function BookTableModal({ isOpen, onClose }: BookTableModalProps)
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-              <DialogContent className="max-w-2xl lg:max-w-[calc(4xl-25px-20%)] bg-white dark:bg-[#1B2030] border-gray-200 dark:border-gray-800 rounded-2xl p-0 overflow-hidden max-h-[85vh] overflow-y-auto modal-centered-content">
+              <DialogContent className={getModalClasses('FORM')}>
         <div className="p-6 sm:p-8">
           <DialogHeader className="mb-6 sm:mb-8">
             <div className="flex items-center gap-3">
@@ -207,8 +282,11 @@ export default function BookTableModal({ isOpen, onClose }: BookTableModalProps)
                     value={formData.customerName}
                     onChange={(e) => handleInputChange('customerName', e.target.value)}
                     placeholder="Enter customer name"
-                    className="w-full"
+                    className={`w-full ${errors.customerName ? 'border-red-500 focus:border-red-500' : ''}`}
                   />
+                  {errors.customerName && (
+                    <p className="text-sm text-red-500 mt-1">{errors.customerName}</p>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
@@ -224,10 +302,10 @@ export default function BookTableModal({ isOpen, onClose }: BookTableModalProps)
                       maxLength={14}
                     />
                   </div>
-                  {phoneError && (
+                  {(phoneError || errors.customerPhone) && (
                     <div className="flex items-center gap-1 text-sm text-red-500">
                       <AlertCircle className="w-4 h-4" />
-                      {phoneError}
+                      {errors.customerPhone || phoneError}
                     </div>
                   )}
                 </div>
@@ -243,10 +321,10 @@ export default function BookTableModal({ isOpen, onClose }: BookTableModalProps)
                   placeholder="customer@example.com"
                   className="w-full"
                 />
-                {emailError && (
+                {(emailError || errors.customerEmail) && (
                   <div className="flex items-center gap-1 text-sm text-red-500">
                     <AlertCircle className="w-4 h-4" />
-                    {emailError}
+                    {errors.customerEmail || emailError}
                   </div>
                 )}
               </div>
@@ -272,15 +350,18 @@ export default function BookTableModal({ isOpen, onClose }: BookTableModalProps)
                       min={today}
                       value={formData.reservationDate}
                       onChange={(e) => handleInputChange('reservationDate', e.target.value)}
-                      className="pl-10"
+                      className={`pl-10 ${errors.reservationDate ? 'border-red-500 focus:border-red-500' : ''}`}
                     />
                   </div>
+                  {errors.reservationDate && (
+                    <p className="text-sm text-red-500 mt-1">{errors.reservationDate}</p>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="reservationTime">Time *</Label>
                   <Select value={formData.reservationTime} onValueChange={(value) => handleInputChange('reservationTime', value)}>
-                    <SelectTrigger>
+                    <SelectTrigger className={errors.reservationTime ? 'border-red-500 focus:border-red-500' : ''}>
                       <SelectValue placeholder="Select time" />
                     </SelectTrigger>
                     <SelectContent>
@@ -291,13 +372,16 @@ export default function BookTableModal({ isOpen, onClose }: BookTableModalProps)
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.reservationTime && (
+                    <p className="text-sm text-red-500 mt-1">{errors.reservationTime}</p>
+                  )}
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="partySize">Party Size *</Label>
                 <Select value={formData.partySize} onValueChange={(value) => handleInputChange('partySize', value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className={errors.partySize ? 'border-red-500 focus:border-red-500' : ''}>
                     <SelectValue placeholder="Select party size" />
                   </SelectTrigger>
                   <SelectContent>
@@ -308,6 +392,9 @@ export default function BookTableModal({ isOpen, onClose }: BookTableModalProps)
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.partySize && (
+                  <p className="text-sm text-red-500 mt-1">{errors.partySize}</p>
+                )}
               </div>
             </div>
 
@@ -441,9 +528,10 @@ export default function BookTableModal({ isOpen, onClose }: BookTableModalProps)
             </Button>
             <Button
               onClick={handleSave}
-              className="px-8 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:opacity-90 transition-opacity duration-200 shadow-lg"
+              disabled={isSubmitting}
+              className="px-8 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:opacity-90 transition-opacity duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Book Table
+              {isSubmitting ? 'Booking...' : 'Book Table'}
             </Button>
           </div>
         </div>

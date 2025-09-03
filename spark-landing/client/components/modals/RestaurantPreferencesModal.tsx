@@ -1,4 +1,16 @@
 import React, { useState } from 'react';
+import { 
+  validateEmail, 
+  getEmailError,
+  validateRequired,
+  getRequiredError,
+  validatePhoneNumber,
+  getPhoneError,
+  validateName,
+  getNameError
+} from '../../utils/validation';
+import { useToast } from '../../hooks/use-toast';
+import { getModalClasses, MODAL_CONFIGS } from '../../utils/modalSizes';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -80,6 +92,7 @@ const PRICE_RANGES = [
 ];
 
 export default function RestaurantPreferencesModal({ isOpen, onClose }: RestaurantPreferencesModalProps) {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('restaurant');
   const [inviteCode] = useState('SILEX2024');
   const [copiedInviteCode, setCopiedInviteCode] = useState(false);
@@ -122,6 +135,8 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
     { id: 3, name: 'Mike Brown', role: 'Server', email: 'mike@silexrestaurant.com', phone: '+1 (555) 123-4569', isActive: true },
     { id: 4, name: 'Lisa Davis', role: 'Host', email: 'lisa@silexrestaurant.com', phone: '+1 (555) 123-4570', isActive: false }
   ]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleRestaurantInfoChange = (field: string, value: string) => {
     setRestaurantInfo(prev => ({ ...prev, [field]: value }));
@@ -170,13 +185,115 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
   };
 
   const removeStaff = (id: number) => {
+    const staffMember = staff.find(s => s.id === id);
     setStaff(staff.filter(s => s.id !== id));
+    
+    // Show success toast
+    toast({
+      title: "Staff Member Removed",
+      description: `${staffMember?.name || 'Staff member'} has been removed from the team.`,
+      variant: "default",
+    });
   };
 
   const toggleStaffStatus = (id: number) => {
+    const staffMember = staff.find(s => s.id === id);
+    const newStatus = !staffMember?.isActive;
+    
     setStaff(staff.map(s => 
-      s.id === id ? { ...s, isActive: !s.isActive } : s
+      s.id === id ? { ...s, isActive: newStatus } : s
     ));
+    
+    // Show success toast
+    toast({
+      title: "Staff Status Updated",
+      description: `${staffMember?.name || 'Staff member'} is now ${newStatus ? 'active' : 'inactive'}.`,
+      variant: "default",
+    });
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    
+    // Validate restaurant information
+    if (!restaurantInfo.name?.trim()) {
+      newErrors.restaurantName = 'Restaurant name is required';
+    }
+    
+    if (!restaurantInfo.address?.trim()) {
+      newErrors.restaurantAddress = 'Restaurant address is required';
+    }
+    
+    if (!restaurantInfo.phone?.trim()) {
+      newErrors.restaurantPhone = 'Restaurant phone is required';
+    }
+    
+    if (!restaurantInfo.email?.trim()) {
+      newErrors.restaurantEmail = 'Restaurant email is required';
+    } else if (!validateEmail(restaurantInfo.email)) {
+      newErrors.restaurantEmail = 'Please enter a valid email address';
+    }
+    
+    if (!restaurantInfo.cuisine) {
+      newErrors.restaurantCuisine = 'Cuisine type is required';
+    }
+    
+    if (!restaurantInfo.capacity || !/^\d+$/.test(restaurantInfo.capacity)) {
+      newErrors.restaurantCapacity = 'Capacity must be a positive number';
+    }
+    
+    if (!restaurantInfo.priceRange) {
+      newErrors.restaurantPriceRange = 'Price range is required';
+    }
+    
+    // Validate hours (at least one day should be open)
+    const hasOpenDays = Object.values(hours).some(day => !day.closed);
+    if (!hasOpenDays) {
+      newErrors.restaurantHours = 'At least one day must be open';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSave = async () => {
+    if (!validateForm()) {
+      toast({
+        title: "Validation Error",
+        description: "Please fix the errors in the form before saving.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      console.log('Saving restaurant preferences:', { restaurantInfo, hours, holidays, staff });
+      
+      // Show success toast
+      toast({
+        title: "Preferences Saved Successfully!",
+        description: "Your restaurant preferences have been updated.",
+        variant: "default",
+      });
+      
+      // Close modal after showing toast
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    } catch (error) {
+      console.error('Error saving restaurant preferences:', error);
+      
+      // Show error toast
+      toast({
+        title: "Error",
+        description: "Failed to save preferences. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleAddStaff = (staffData: {
@@ -191,6 +308,13 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
       ...staffData
     };
     setStaff([...staff, newStaff]);
+    
+    // Show success toast
+    toast({
+      title: "Staff Member Added!",
+      description: `${staffData.name} has been added to the team.`,
+      variant: "default",
+    });
   };
 
   const sendEmailInvite = (email: string, name: string) => {
@@ -198,24 +322,43 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
     const body = `Hi ${name},\n\nYou've been invited to join the Silex Restaurant team!\n\nUse this invite code: ${inviteCode}\n\nBest regards,\nSilex Restaurant Team`;
     const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(mailtoLink);
+    
+    // Show success toast
+    toast({
+      title: "Email Invite Sent!",
+      description: `Invitation email sent to ${email}`,
+      variant: "default",
+    });
   };
 
   const sendSMSInvite = (phone: string, name: string) => {
     const message = `Hi ${name}, you've been invited to join Silex Restaurant! Use invite code: ${inviteCode}`;
     const smsLink = `sms:${phone.replace(/\D/g, '')}?body=${encodeURIComponent(message)}`;
     window.open(smsLink);
+    
+    // Show success toast
+    toast({
+      title: "SMS Invite Sent!",
+      description: `Invitation SMS sent to ${phone}`,
+      variant: "default",
+    });
   };
 
   const copyInviteCode = () => {
     navigator.clipboard.writeText(inviteCode);
     setCopiedInviteCode(true);
+    
+    // Show success toast
+    toast({
+      title: "Invite Code Copied!",
+      description: "Invite code copied to clipboard",
+      variant: "default",
+    });
+    
     setTimeout(() => setCopiedInviteCode(false), 2000);
   };
 
-  const handleSave = () => {
-    console.log('Saving restaurant preferences:', { restaurantInfo, hours, holidays, staff });
-    onClose();
-  };
+
 
   const dayNames = {
     monday: 'Monday',
@@ -229,7 +372,7 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl lg:max-w-[calc(4xl-20%)] bg-white dark:bg-[#1B2030] border-gray-200 dark:border-gray-800 rounded-2xl p-0 overflow-hidden max-h-[85vh] overflow-y-auto modal-centered-content">
+      <DialogContent className={getModalClasses('COMPLEX_FORM')}>
         <div className="p-6 sm:p-8">
           <DialogHeader className="mb-6 sm:mb-8">
             <div className="flex items-center gap-3">
@@ -264,8 +407,13 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
                   <Input
                     value={restaurantInfo.name}
                     onChange={(e) => handleRestaurantInfoChange('name', e.target.value)}
-                    className="w-full p-3 border-2 border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50"
+                    className={`w-full p-3 border-2 rounded-lg bg-gray-50 dark:bg-gray-800/50 ${
+                      errors.restaurantName ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'
+                    }`}
                   />
+                  {errors.restaurantName && (
+                    <p className="text-sm text-red-500 mt-1">{errors.restaurantName}</p>
+                  )}
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
@@ -281,6 +429,9 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
                     customText="Use custom cuisine"
                     allowCustom={true}
                   />
+                  {errors.restaurantCuisine && (
+                    <p className="text-sm text-red-500 mt-1">{errors.restaurantCuisine}</p>
+                  )}
                 </div>
               </div>
 
@@ -304,8 +455,13 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
                   <Input
                     value={restaurantInfo.address}
                     onChange={(e) => handleRestaurantInfoChange('address', e.target.value)}
-                    className="w-full p-3 border-2 border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50"
+                    className={`w-full p-3 border-2 rounded-lg bg-gray-50 dark:bg-gray-800/50 ${
+                      errors.restaurantAddress ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'
+                    }`}
                   />
+                  {errors.restaurantAddress && (
+                    <p className="text-sm text-red-500 mt-1">{errors.restaurantAddress}</p>
+                  )}
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
@@ -314,8 +470,13 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
                   <Input
                     value={restaurantInfo.phone}
                     onChange={(e) => handleRestaurantInfoChange('phone', e.target.value)}
-                    className="w-full p-3 border-2 border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50"
+                    className={`w-full p-3 border-2 rounded-lg bg-gray-50 dark:bg-gray-800/50 ${
+                      errors.restaurantPhone ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'
+                    }`}
                   />
+                  {errors.restaurantPhone && (
+                    <p className="text-sm text-red-500 mt-1">{errors.restaurantPhone}</p>
+                  )}
                 </div>
               </div>
 
@@ -327,8 +488,13 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
                   <Input
                     value={restaurantInfo.email}
                     onChange={(e) => handleRestaurantInfoChange('email', e.target.value)}
-                    className="w-full p-3 border-2 border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50"
+                    className={`w-full p-3 border-2 rounded-lg bg-gray-50 dark:bg-gray-800/50 ${
+                      errors.restaurantEmail ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'
+                    }`}
                   />
+                  {errors.restaurantEmail && (
+                    <p className="text-sm text-red-500 mt-1">{errors.restaurantEmail}</p>
+                  )}
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
@@ -350,15 +516,22 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
                   <Input
                     value={restaurantInfo.capacity}
                     onChange={(e) => handleRestaurantInfoChange('capacity', e.target.value)}
-                    className="w-full p-3 border-2 border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50"
+                    className={`w-full p-3 border-2 rounded-lg bg-gray-50 dark:bg-gray-800/50 ${
+                      errors.restaurantCapacity ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'
+                    }`}
                   />
+                  {errors.restaurantCapacity && (
+                    <p className="text-sm text-red-500 mt-1">{errors.restaurantCapacity}</p>
+                  )}
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
                     Price Range
                   </Label>
                   <Select value={restaurantInfo.priceRange} onValueChange={(value) => handleRestaurantInfoChange('priceRange', value)}>
-                    <SelectTrigger className="w-full p-3 border-2 border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                    <SelectTrigger className={`w-full p-3 border-2 rounded-lg bg-gray-50 dark:bg-gray-800/50 ${
+                      errors.restaurantPriceRange ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'
+                    }`}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -367,6 +540,9 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.restaurantPriceRange && (
+                    <p className="text-sm text-red-500 mt-1">{errors.restaurantPriceRange}</p>
+                  )}
                 </div>
               </div>
             </TabsContent>
@@ -460,6 +636,12 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
                   ))}
                 </div>
               </div>
+              
+              {errors.restaurantHours && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <p className="text-sm text-red-600 dark:text-red-400">{errors.restaurantHours}</p>
+                </div>
+              )}
             </TabsContent>
 
             {/* Staff Tab */}
@@ -648,9 +830,10 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
             </Button>
             <Button
               onClick={handleSave}
-              className="px-8 py-2 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-xl hover:opacity-90 transition-opacity duration-200 shadow-lg"
+              disabled={isSubmitting}
+              className="px-8 py-2 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-xl hover:opacity-90 transition-opacity duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Save Changes
+              {isSubmitting ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </div>

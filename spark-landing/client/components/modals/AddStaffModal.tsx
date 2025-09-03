@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getModalClasses, MODAL_CONFIGS } from '../../utils/modalSizes';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -13,6 +14,7 @@ import {
   formatPhoneNumber, 
   getPhoneError
 } from '../../utils/validation';
+import { useToast } from '../../hooks/use-toast';
 
 interface AddStaffModalProps {
   isOpen: boolean;
@@ -27,6 +29,7 @@ interface AddStaffModalProps {
 }
 
 export default function AddStaffModal({ isOpen, onClose, onAddStaff }: AddStaffModalProps) {
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: '',
     role: '',
@@ -40,6 +43,7 @@ export default function AddStaffModal({ isOpen, onClose, onAddStaff }: AddStaffM
     email: '',
     phone: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const roles = [
     { value: 'manager', label: 'Manager' },
@@ -87,7 +91,7 @@ export default function AddStaffModal({ isOpen, onClose, onAddStaff }: AddStaffM
     setErrors(prev => ({ ...prev, name: nameError }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Validate all fields
     const newErrors = {
       name: getNameError(formData.name),
@@ -100,25 +104,55 @@ export default function AddStaffModal({ isOpen, onClose, onAddStaff }: AddStaffM
 
     // Check if there are any errors
     if (Object.values(newErrors).some(error => error !== '')) {
+      toast({
+        title: "Validation Error",
+        description: "Please fix the errors in the form before submitting.",
+        variant: "destructive",
+      });
       return;
     }
 
-    // Create new staff member
-    const newStaff = {
-      name: formData.name,
-      role: roles.find(r => r.value === formData.role)?.label || formData.role,
-      email: formData.email,
-      phone: formData.phone,
-      isActive: true
-    };
+    setIsSubmitting(true);
 
-    onAddStaff(newStaff);
-    
-    // Reset form
-    setFormData({ name: '', role: '', email: '', phone: '' });
-    setErrors({ name: '', role: '', email: '', phone: '' });
-    
-    onClose();
+    try {
+      // Create new staff member
+      const newStaff = {
+        name: formData.name,
+        role: roles.find(r => r.value === formData.role)?.label || formData.role,
+        email: formData.email,
+        phone: formData.phone,
+        isActive: true
+      };
+
+      onAddStaff(newStaff);
+      
+      // Show success toast
+      toast({
+        title: "Success!",
+        description: `${formData.name} has been added to the staff.`,
+        variant: "default",
+      });
+      
+      // Reset form
+      setFormData({ name: '', role: '', email: '', phone: '' });
+      setErrors({ name: '', role: '', email: '', phone: '' });
+      
+      // Close modal after showing toast
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    } catch (error) {
+      console.error('Error adding staff member:', error);
+      
+      // Show error toast
+      toast({
+        title: "Error",
+        description: "Failed to add staff member. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
@@ -130,7 +164,7 @@ export default function AddStaffModal({ isOpen, onClose, onAddStaff }: AddStaffM
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl lg:max-w-[calc(4xl-20%)] bg-white dark:bg-[#1B2030] border-gray-200 dark:border-gray-800 rounded-2xl p-0 overflow-hidden max-h-[85vh] overflow-y-auto modal-centered-content">
+      <DialogContent className={getModalClasses('COMPLEX_FORM')}>
         <div className="p-6 sm:p-8">
           <DialogHeader className="mb-6 sm:mb-8">
             <div className="flex items-center gap-3">
@@ -235,9 +269,10 @@ export default function AddStaffModal({ isOpen, onClose, onAddStaff }: AddStaffM
             </Button>
             <Button
               onClick={handleSave}
-              className="px-8 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl hover:opacity-90 transition-opacity duration-200 shadow-lg"
+              disabled={isSubmitting}
+              className="px-8 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl hover:opacity-90 transition-opacity duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Add Staff Member
+              {isSubmitting ? 'Adding...' : 'Add Staff Member'}
             </Button>
           </div>
         </div>

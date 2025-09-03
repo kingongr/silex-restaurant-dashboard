@@ -1,16 +1,14 @@
 // DashboardLayout removed - already wrapped by App.tsx routing
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useScrollY } from '@/hooks/useScrollY';
-import { Plus, Search, Filter, Users, MapPin, Settings, Edit, X, ChevronDown, ChevronUp, Bell } from 'lucide-react';
+import { Plus, Search, Filter, Users, MapPin, Settings, Edit, X, ChevronDown, ChevronUp } from 'lucide-react';
 import AddTableModal from '@/components/modals/AddTableModal';
 
 export default function Tables() {
   const [isAddTableModalOpen, setIsAddTableModalOpen] = useState(false);
-  const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
   const [selectedTable, setSelectedTable] = useState<any>(null);
   const [isTableDetailsModalOpen, setIsTableDetailsModalOpen] = useState(false);
   const [isEditTableModalOpen, setIsEditTableModalOpen] = useState(false);
@@ -18,51 +16,7 @@ export default function Tables() {
   const [tableToDelete, setTableToDelete] = useState<any>(null);
   const [isFloorPlanCollapsed, setIsFloorPlanCollapsed] = useState(true); // Start collapsed
   
-  // Scroll behavior for floating notification bell
-  const bellRef = useRef<HTMLDivElement>(null);
-  const { scrollY, getAdaptiveScrollTransform } = useScrollY();
 
-  // Mock notifications data for table management
-  const mockTableNotifications = [
-    {
-      id: '1',
-      type: 'table_occupied',
-      title: 'Table 3 Occupied! 🍽️',
-      message: 'Table 3 has been occupied by Sarah Johnson. Reservation time: 7:30 PM.',
-      time: '15 minutes ago',
-      isRead: false,
-      priority: 'medium'
-    },
-    {
-      id: '2',
-      type: 'table_cleaning',
-      title: 'Table 4 Cleaning Complete! ✨',
-      message: 'Table 4 has been cleaned and is now available for new customers.',
-      time: '5 minutes ago',
-      isRead: false,
-      priority: 'high'
-    },
-    {
-      id: '3',
-      type: 'reservation_reminder',
-      title: 'Upcoming Reservation! ⏰',
-      message: 'Table 5 has a reservation in 30 minutes. Please ensure it\'s ready.',
-      time: '1 hour ago',
-      isRead: true,
-      priority: 'medium'
-    },
-    {
-      id: '4',
-      type: 'table_maintenance',
-      title: 'Table Maintenance Alert! 🔧',
-      message: 'Table 2 requires maintenance. Please schedule a technician.',
-      time: '2 hours ago',
-      isRead: true,
-      priority: 'low'
-    }
-  ];
-
-  const unreadCount = mockTableNotifications.filter(n => !n.isRead).length;
 
   // Mock table data
   const mockTables = [
@@ -220,22 +174,6 @@ export default function Tables() {
           </div>
           
           <div className="flex items-center gap-2">
-            {/* Notifications Button */}
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setIsNotificationsModalOpen(true)}
-              className="relative"
-            >
-              <Bell className="w-4 h-4 mr-2" />
-              Notifications
-              {unreadCount > 0 && (
-                <Badge className="ml-2 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0">
-                  {unreadCount}
-                </Badge>
-              )}
-            </Button>
-            
             <Button variant="outline" size="sm">
               <MapPin className="w-4 h-4 mr-2" />
               Floor Plan
@@ -730,125 +668,10 @@ export default function Tables() {
         </DialogContent>
       </Dialog>
 
-      {/* Notifications Modal */}
-      <Dialog open={isNotificationsModalOpen} onOpenChange={setIsNotificationsModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Bell className="w-5 h-5" />
-              Table Management Notifications
-              {unreadCount > 0 && (
-                <Badge className="ml-2 bg-red-500 text-white">
-                  {unreadCount} new
-                </Badge>
-              )}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-            {mockTableNotifications.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Bell className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium">No notifications yet</p>
-                <p className="text-sm">You'll see important table updates here</p>
-              </div>
-            ) : (
-              mockTableNotifications.map((notification) => {
-                const priorityColors = {
-                  high: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700',
-                  medium: 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700',
-                  low: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700'
-                };
-                
-                const priorityIcons = {
-                  high: '🔴',
-                  medium: '🟡',
-                  low: '🔵'
-                };
-                
-                return (
-                  <div 
-                    key={notification.id}
-                    className={`p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer ${
-                      !notification.isRead ? priorityColors[notification.priority as keyof typeof priorityColors] : ''
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="mt-1 text-lg">
-                        {priorityIcons[notification.priority as keyof typeof priorityColors]}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-semibold text-foreground">
-                            {notification.title}
-                          </h4>
-                          <span className="text-xs text-muted-foreground">
-                            {notification.time}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {notification.message}
-                        </p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Badge variant="outline" className="text-xs">
-                            {notification.priority} priority
-                          </Badge>
-                        </div>
-                      </div>
-                      {!notification.isRead && (
-                        <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2"></div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-          
-          <div className="flex items-center justify-between pt-4 border-t border-border">
-            <p className="text-sm text-muted-foreground">
-              {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
-            </p>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => {
-                // Mark all as read logic would go here
-                console.log('Mark all as read');
-              }}
-            >
-              Mark all as read
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
-      {/* Floating Notification Button */}
-      <div 
-        ref={bellRef}
-        className="fixed bottom-6 right-6 z-50"
-        style={{
-          transform: `translateY(${getAdaptiveScrollTransform()}px)`,
-          transition: 'transform 0.15s ease-out'
-        }}
-        title={`Scroll Y: ${scrollY}, Adaptive Transform: ${getAdaptiveScrollTransform()}px`}
-      >
-        {/* Debug indicator */}
-        <div className="absolute -top-8 left-0 bg-red-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-          Scroll: {scrollY}px
-        </div>
-        <Button
-          onClick={() => setIsNotificationsModalOpen(true)}
-          className="relative h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
-        >
-          <Bell className="w-6 h-6 text-white" />
-          {unreadCount > 0 && (
-            <Badge className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0 animate-pulse">
-              {unreadCount}
-            </Badge>
-          )}
-        </Button>
-      </div>
+
+
+
     </>
   );
 }

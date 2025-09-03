@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getModalClasses, MODAL_CONFIGS } from '../../utils/modalSizes';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -47,6 +48,7 @@ export default function AccountPreferencesModal({ isOpen, onClose }: AccountPref
     email: '',
     phone: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -82,7 +84,7 @@ export default function AccountPreferencesModal({ isOpen, onClose }: AccountPref
     setErrors(prev => ({ ...prev, [field]: nameError }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Validate all fields
     const newErrors = {
       firstName: getNameError(formData.firstName),
@@ -98,13 +100,21 @@ export default function AccountPreferencesModal({ isOpen, onClose }: AccountPref
       return;
     }
 
-    console.log('Saving account preferences:', formData);
-    onClose();
+    setIsSubmitting(true);
+
+    try {
+      console.log('Saving account preferences:', formData);
+      onClose();
+    } catch (error) {
+      console.error('Error saving account preferences:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl lg:max-w-[calc(4xl-20%)] bg-white dark:bg-[#1B2030] border-gray-200 dark:border-gray-800 rounded-2xl p-0 overflow-hidden max-h-[85vh] overflow-y-auto modal-centered-content">
+      <DialogContent className={getModalClasses('FORM')}>
         <div className="p-6 sm:p-8">
           <DialogHeader className="mb-6 sm:mb-8">
             <div className="flex items-center gap-3">
@@ -367,9 +377,10 @@ export default function AccountPreferencesModal({ isOpen, onClose }: AccountPref
               </Button>
               <Button
                 onClick={handleSave}
-                className="px-8 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:opacity-90 transition-opacity duration-200 shadow-lg"
+                disabled={isSubmitting}
+                className="px-8 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:opacity-90 transition-opacity duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Save Changes
+                {isSubmitting ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
           </div>

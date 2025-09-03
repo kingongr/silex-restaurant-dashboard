@@ -1,4 +1,20 @@
 import { useState } from 'react';
+import { getModalClasses, MODAL_CONFIGS } from '../../utils/modalSizes';
+import { 
+  validateRequired, 
+  getRequiredError, 
+  validateEmail, 
+  getEmailError,
+  validatePhoneNumber,
+  getPhoneError,
+  validateFutureDate,
+  getFutureDateError,
+  validateBusinessHours,
+  getBusinessHoursError,
+  validatePartySize,
+  getPartySizeError
+} from '../../utils/validation';
+import { useToast } from '../../hooks/use-toast';
 import {
   Dialog,
   DialogContent,
@@ -48,6 +64,7 @@ const specialOccasions = [
 ];
 
 export function AddReservationModal({ isOpen, onClose }: AddReservationModalProps) {
+  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [customerType, setCustomerType] = useState<'new' | 'returning' | null>(null);
   const [customerData, setCustomerData] = useState({
@@ -64,6 +81,7 @@ export function AddReservationModal({ isOpen, onClose }: AddReservationModalProp
     accessibility: false,
     preOrder: false
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const totalSteps = 4;
 
@@ -92,10 +110,116 @@ export function AddReservationModal({ isOpen, onClose }: AddReservationModalProp
       accessibility: false,
       preOrder: false
     });
+    setErrors({});
     onClose();
   };
 
+  const handleCreateReservation = () => {
+    // Validate final step
+    if (!validateStep(currentStep)) {
+      toast({
+        title: "Validation Error",
+        description: "Please fix the errors before creating the reservation.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Create reservation data
+      const reservationDataFinal = {
+        customer: customerData,
+        reservation: reservationData,
+        createdAt: new Date().toISOString()
+      };
+
+      console.log('Creating reservation:', reservationDataFinal);
+
+      // Show success toast
+      toast({
+        title: "Reservation Created Successfully!",
+        description: `Reservation for ${customerData.name} on ${reservationData.date} at ${reservationData.time} has been created.`,
+        variant: "default",
+      });
+
+      // Close modal after showing toast
+      setTimeout(() => {
+        handleClose();
+      }, 1500);
+    } catch (error) {
+      console.error('Error creating reservation:', error);
+      
+      toast({
+        title: "Error",
+        description: "Failed to create reservation. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const validateStep = (step: number): boolean => {
+    const newErrors: Record<string, string> = {};
+    
+    switch (step) {
+      case 1:
+        if (!customerType) {
+          newErrors.customerType = 'Please select a customer type';
+        }
+        break;
+        
+      case 2:
+        if (customerType === 'new') {
+          if (!validateRequired(customerData.name)) {
+            newErrors.customerName = getRequiredError(customerData.name, 'Customer name');
+          } else if (!validateName(customerData.name)) {
+            newErrors.customerName = getNameError(customerData.name);
+          }
+          
+          if (!validateRequired(customerData.phone)) {
+            newErrors.customerPhone = getRequiredError(customerData.phone, 'Phone number');
+          } else if (!validatePhoneNumber(customerData.phone)) {
+            newErrors.customerPhone = getPhoneError(customerData.phone);
+          }
+          
+          if (customerData.email && !validateEmail(customerData.email)) {
+            newErrors.customerEmail = getEmailError(customerData.email);
+          }
+        }
+        break;
+        
+      case 3:
+        if (!validateRequired(reservationData.date)) {
+          newErrors.reservationDate = getRequiredError(reservationData.date, 'Reservation date');
+        } else if (!validateFutureDate(reservationData.date)) {
+          newErrors.reservationDate = getFutureDateError(reservationData.date);
+        }
+        
+        if (!validateRequired(reservationData.time)) {
+          newErrors.reservationTime = getRequiredError(reservationData.time, 'Reservation time');
+        } else if (!validateBusinessHours(reservationData.time)) {
+          newErrors.reservationTime = getBusinessHoursError(reservationData.time);
+        }
+        
+        if (!validatePartySize(reservationData.partySize, 1, 20)) {
+          newErrors.partySize = getPartySizeError(reservationData.partySize, 1, 20);
+        }
+        break;
+        
+      case 4:
+        // Final validation - all required fields should be valid
+        break;
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const canProceed = () => {
+    // Validate current step before allowing to proceed
+    if (!validateStep(currentStep)) {
+      return false;
+    }
+    
     switch (currentStep) {
       case 1: return customerType !== null;
       case 2: return customerType === 'returning' || (customerData.name && customerData.phone);
@@ -119,15 +243,16 @@ export function AddReservationModal({ isOpen, onClose }: AddReservationModalProp
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-              <DialogContent className="max-w-[calc(4xl-20%)] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
-            <div className="w-8 h-8 aurora-gradient rounded-lg flex items-center justify-center">
-              <Calendar className="w-4 h-4 text-white" />
-            </div>
-            Add New Reservation - Step {currentStep} of {totalSteps}
-          </DialogTitle>
-        </DialogHeader>
+              <DialogContent className={getModalClasses('MULTI_STEP')}>
+        <div className="p-6 sm:p-8">
+          <DialogHeader className="mb-6 sm:mb-8">
+            <DialogTitle className="flex items-center gap-3">
+              <div className="w-8 h-8 aurora-gradient rounded-lg flex items-center justify-center">
+                <Calendar className="w-4 h-4 text-white" />
+              </div>
+              Add New Reservation - Step {currentStep} of {totalSteps}
+            </DialogTitle>
+          </DialogHeader>
 
         {/* Progress Bar */}
         <div className="w-full bg-muted rounded-full h-2 mb-6">
@@ -142,6 +267,9 @@ export function AddReservationModal({ isOpen, onClose }: AddReservationModalProp
           <div className="space-y-6">
             <div>
               <h3 className="text-heading-3 font-semibold mb-4">Customer Information</h3>
+              {errors.customerType && (
+                <p className="text-sm text-red-500 mb-4">{errors.customerType}</p>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card 
                   className={`cursor-pointer transition-all hover:shadow-lg ${
@@ -188,12 +316,15 @@ export function AddReservationModal({ isOpen, onClose }: AddReservationModalProp
                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       id="name"
-                      className="pl-10"
+                      className={`pl-10 ${errors.customerName ? 'border-red-500 focus:border-red-500' : ''}`}
                       placeholder="Enter customer name"
                       value={customerData.name}
                       onChange={(e) => setCustomerData({...customerData, name: e.target.value})}
                     />
                   </div>
+                  {errors.customerName && (
+                    <p className="text-sm text-red-500 mt-1">{errors.customerName}</p>
+                  )}
                 </div>
                 
                 <div>
@@ -202,12 +333,15 @@ export function AddReservationModal({ isOpen, onClose }: AddReservationModalProp
                     <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       id="phone"
-                      className="pl-10"
+                      className={`pl-10 ${errors.customerPhone ? 'border-red-500 focus:border-red-500' : ''}`}
                       placeholder="(555) 123-4567"
                       value={customerData.phone}
                       onChange={(e) => setCustomerData({...customerData, phone: e.target.value})}
                     />
                   </div>
+                  {errors.customerPhone && (
+                    <p className="text-sm text-red-500 mt-1">{errors.customerPhone}</p>
+                  )}
                 </div>
                 
                 <div className="md:col-span-2">
@@ -217,12 +351,15 @@ export function AddReservationModal({ isOpen, onClose }: AddReservationModalProp
                     <Input
                       id="email"
                       type="email"
-                      className="pl-10"
+                      className={`pl-10 ${errors.customerEmail ? 'border-red-500 focus:border-red-500' : ''}`}
                       placeholder="customer@example.com"
                       value={customerData.email}
                       onChange={(e) => setCustomerData({...customerData, email: e.target.value})}
                     />
                   </div>
+                  {errors.customerEmail && (
+                    <p className="text-sm text-red-500 mt-1">{errors.customerEmail}</p>
+                  )}
                 </div>
               </div>
             )}
@@ -271,12 +408,15 @@ export function AddReservationModal({ isOpen, onClose }: AddReservationModalProp
                     <Input
                       id="date"
                       type="date"
-                      className="pl-10"
+                      className={`pl-10 ${errors.reservationDate ? 'border-red-500 focus:border-red-500' : ''}`}
                       min={new Date().toISOString().split('T')[0]}
                       value={reservationData.date}
                       onChange={(e) => setReservationData({...reservationData, date: e.target.value})}
                     />
                   </div>
+                  {errors.reservationDate && (
+                    <p className="text-sm text-red-500 mt-1">{errors.reservationDate}</p>
+                  )}
                 </div>
 
                 <div>
@@ -294,6 +434,9 @@ export function AddReservationModal({ isOpen, onClose }: AddReservationModalProp
                       </Button>
                     ))}
                   </div>
+                  {errors.partySize && (
+                    <p className="text-sm text-red-500 mt-1">{errors.partySize}</p>
+                  )}
                 </div>
               </div>
 
@@ -314,6 +457,9 @@ export function AddReservationModal({ isOpen, onClose }: AddReservationModalProp
                     </Button>
                   ))}
                 </div>
+                {errors.reservationTime && (
+                  <p className="text-sm text-red-500 mt-1">{errors.reservationTime}</p>
+                )}
               </div>
             </div>
 
@@ -452,7 +598,7 @@ export function AddReservationModal({ isOpen, onClose }: AddReservationModalProp
               Cancel
             </Button>
             {currentStep === totalSteps ? (
-              <Button className="btn-aurora" onClick={handleClose}>
+              <Button className="btn-aurora" onClick={handleCreateReservation}>
                 <Check className="w-4 h-4 mr-2" />
                 Create Reservation
               </Button>
@@ -467,6 +613,7 @@ export function AddReservationModal({ isOpen, onClose }: AddReservationModalProp
               </Button>
             )}
           </div>
+        </div>
         </div>
       </DialogContent>
     </Dialog>
