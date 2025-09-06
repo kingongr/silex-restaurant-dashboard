@@ -133,7 +133,6 @@ export function AddReservationModal({ isOpen, onClose }: AddReservationModalProp
         createdAt: new Date().toISOString()
       };
 
-      console.log('Creating reservation:', reservationDataFinal);
 
       // Show success toast
       toast({
@@ -147,7 +146,6 @@ export function AddReservationModal({ isOpen, onClose }: AddReservationModalProp
         handleClose();
       }, 1500);
     } catch (error) {
-      console.error('Error creating reservation:', error);
       
       toast({
         title: "Error",
@@ -243,7 +241,7 @@ export function AddReservationModal({ isOpen, onClose }: AddReservationModalProp
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-              <DialogContent className={getModalClasses('MULTI_STEP')}>
+              <DialogContent className="max-w-3xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-0 shadow-2xl rounded-3xl overflow-hidden max-h-[85vh] overflow-y-auto">
         <div className="p-6 sm:p-8">
           <DialogHeader className="mb-6 sm:mb-8">
             <DialogTitle className="flex items-center gap-3">

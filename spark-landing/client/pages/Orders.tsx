@@ -25,6 +25,10 @@ import {
   ChefHat,
   DollarSign
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+// Tax rate constant
+const TAX_RATE = 0.08; // 8% tax rate
 
 interface OrderItem {
   id: string;
@@ -164,6 +168,9 @@ export default function Orders() {
     { id: 'item8', name: 'Soft Drink', price: 3.99, category: 'Beverages' }
   ];
 
+  // Toast hook
+  const { toast } = useToast();
+
   const [isAddOrderModalOpen, setIsAddOrderModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -201,30 +208,94 @@ export default function Orders() {
   });
 
   const updateOrderStatus = (orderId: string, newStatus: Order['status']) => {
-    setOrders(orders.map(order => 
-      order.id === orderId ? { ...order, status: newStatus } : order
-    ));
+    try {
+      const order = orders.find(o => o.id === orderId);
+      if (!order) {
+        toast({
+          title: "Error",
+          description: "Order not found",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate status transition
+      if (!isValidStatusTransition(order.status, newStatus)) {
+        toast({
+          title: "Invalid Status Transition",
+          description: `Cannot change status from ${order.status} to ${newStatus}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setOrders(orders.map(order =>
+        order.id === orderId ? { ...order, status: newStatus } : order
+      ));
+
+      // Show success message
+      toast({
+        title: "Order Updated",
+        description: `Order ${order.orderNumber} status changed to ${newStatus}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update order status",
+        variant: "destructive",
+      });
+    }
   };
 
-  // Order workflow functions
+  // Validate status transitions
+  const isValidStatusTransition = (currentStatus: Order['status'], newStatus: Order['status']): boolean => {
+    const validTransitions: Record<Order['status'], Order['status'][]> = {
+      pending: ['confirmed', 'cancelled'],
+      confirmed: ['preparing', 'cancelled'],
+      preparing: ['ready', 'cancelled'],
+      ready: ['served', 'cancelled'],
+      served: ['paid'],
+      paid: [],
+      cancelled: []
+    };
+
+    return validTransitions[currentStatus]?.includes(newStatus) || false;
+  };
+
+  // Order workflow functions with enhanced feedback
   const confirmOrder = (orderId: string) => {
-    updateOrderStatus(orderId, 'confirmed');
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+      updateOrderStatus(orderId, 'confirmed');
+    }
   };
 
   const startPreparing = (orderId: string) => {
-    updateOrderStatus(orderId, 'preparing');
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+      updateOrderStatus(orderId, 'preparing');
+    }
   };
 
   const markReady = (orderId: string) => {
-    updateOrderStatus(orderId, 'ready');
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+      updateOrderStatus(orderId, 'ready');
+    }
   };
 
   const markServed = (orderId: string) => {
-    updateOrderStatus(orderId, 'served');
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+      updateOrderStatus(orderId, 'served');
+    }
   };
 
   const cancelOrder = (orderId: string) => {
-    updateOrderStatus(orderId, 'cancelled');
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+      updateOrderStatus(orderId, 'cancelled');
+    }
   };
 
   const startEditingOrder = (order: Order) => {
@@ -234,12 +305,78 @@ export default function Orders() {
   };
 
   const saveOrderChanges = () => {
-    if (editingOrder) {
-      setOrders(orders.map(order => 
-        order.id === editingOrder.id ? editingOrder : order
+    if (!editingOrder) {
+      toast({
+        title: "Error",
+        description: "No order is being edited",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Validate order data
+      if (!editingOrder.customer?.name?.trim()) {
+        toast({
+          title: "Validation Error",
+          description: "Customer name is required",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (editingOrder.items.length === 0) {
+        toast({
+          title: "Validation Error",
+          description: "Order must have at least one item",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate all items have valid quantities and prices
+      const invalidItems = editingOrder.items.filter(item =>
+        item.quantity <= 0 || item.price <= 0
+      );
+
+      if (invalidItems.length > 0) {
+        toast({
+          title: "Validation Error",
+          description: "All items must have valid quantity and price",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Calculate totals
+      const subtotal = editingOrder.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const tax = subtotal * TAX_RATE;
+      const total = subtotal + tax;
+
+      const updatedOrder = {
+        ...editingOrder,
+        subtotal: Math.round(subtotal * 100) / 100,
+        tax: Math.round(tax * 100) / 100,
+        total: Math.round(total * 100) / 100
+      };
+
+      setOrders(orders.map(order =>
+        order.id === editingOrder.id ? updatedOrder : order
       ));
+
       setIsEditMode(false);
       setEditingOrder(null);
+
+      toast({
+        title: "Order Updated",
+        description: `Order ${editingOrder.orderNumber} has been successfully updated`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save order changes",
+        variant: "destructive",
+      });
     }
   };
 
@@ -274,10 +411,20 @@ export default function Orders() {
   };
 
   const confirmCancelOrder = () => {
-    if (orderToCancel) {
+    if (!orderToCancel) {
+      toast({
+        title: "Error",
+        description: "No order selected for cancellation",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
       cancelOrder(orderToCancel.id);
       setIsCancelConfirmOpen(false);
       setOrderToCancel(null);
+
       // Close modals if they're open
       if (selectedOrder?.id === orderToCancel.id) {
         setSelectedOrder(null);
@@ -286,30 +433,37 @@ export default function Orders() {
         setIsEditMode(false);
         setEditingOrder(null);
       }
+
+      toast({
+        title: "Order Cancelled",
+        description: `Order ${orderToCancel.orderNumber} has been cancelled`,
+        variant: "destructive",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to cancel order",
+        variant: "destructive",
+      });
     }
   };
 
   const addItemToOrder = (item: { id: string; name: string; price: number; notes?: string }) => {
-    console.log('addItemToOrder called for:', item.name);
     
     if (!editingOrder) {
-      console.log('No editing order found');
       return;
     }
     
     if (isProcessingRef.current) {
-      console.log('Already processing, ignoring click');
       return;
     }
     
-    console.log('Setting processing flag to true');
     isProcessingRef.current = true;
     setIsAddingItem(true);
     
     const existingItem = editingOrder.items.find(i => i.id === item.id);
     
     if (existingItem) {
-      console.log('Updating existing item quantity');
       setEditingOrder(prev => ({
         ...prev!,
         items: prev!.items.map(i =>
@@ -317,7 +471,6 @@ export default function Orders() {
         )
       }));
     } else {
-      console.log('Adding new item');
       const newItem = {
         id: item.id,
         name: item.name,
@@ -332,7 +485,6 @@ export default function Orders() {
       }));
     }
     
-    console.log('Closing modal and resetting state');
     setIsAddItemModalOpen(false);
     setIsAddingItem(false);
     isProcessingRef.current = false;
@@ -1032,11 +1184,11 @@ export default function Orders() {
                     </div>
                     <div className="flex justify-between">
                       <span>Tax:</span>
-                      <span>${(editingOrder.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) * 0.1).toFixed(2)}</span>
+                      <span>${(editingOrder.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) * TAX_RATE).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between font-semibold text-lg">
                       <span>Total:</span>
-                      <span>${(editingOrder.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) * 1.1).toFixed(2)}</span>
+                      <span>${(editingOrder.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) * (1 + TAX_RATE)).toFixed(2)}</span>
                     </div>
                   </div>
                 </CardContent>

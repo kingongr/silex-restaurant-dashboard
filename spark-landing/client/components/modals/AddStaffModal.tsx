@@ -142,7 +142,6 @@ export default function AddStaffModal({ isOpen, onClose, onAddStaff }: AddStaffM
         onClose();
       }, 1500);
     } catch (error) {
-      console.error('Error adding staff member:', error);
       
       // Show error toast
       toast({
@@ -164,7 +163,7 @@ export default function AddStaffModal({ isOpen, onClose, onAddStaff }: AddStaffM
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className={getModalClasses('COMPLEX_FORM')}>
+      <DialogContent className="max-w-3xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-0 shadow-2xl rounded-3xl overflow-hidden max-h-[85vh] overflow-y-auto ml-[132px]">
         <div className="p-6 sm:p-8">
           <DialogHeader className="mb-6 sm:mb-8">
             <div className="flex items-center gap-3">

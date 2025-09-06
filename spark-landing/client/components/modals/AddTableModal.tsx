@@ -8,7 +8,8 @@ import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
-import { Plus, Users, MapPin, Star, Settings, Wifi, Zap, UserCheck } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Plus, Users, MapPin, Star, Settings, Wifi, Zap, UserCheck, Sparkles } from 'lucide-react';
 
 interface AddTableModalProps {
   isOpen: boolean;
@@ -81,10 +82,8 @@ export default function AddTableModal({ isOpen, onClose }: AddTableModalProps) {
     setIsSubmitting(true);
     
     try {
-      console.log('Adding table:', formData);
       onClose();
     } catch (error) {
-      console.error('Error adding table:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -130,18 +129,26 @@ export default function AddTableModal({ isOpen, onClose }: AddTableModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-              <DialogContent className={getModalClasses('FORM')}>
-        <div className="p-6 sm:p-8">
-          <DialogHeader className="mb-6 sm:mb-8">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center">
-                <Plus className="w-5 h-5 text-white" />
+      <DialogContent className="max-w-3xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-0 shadow-2xl rounded-3xl overflow-hidden max-h-[85vh] overflow-y-auto ml-[132px]">
+        {/* Animated background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 via-white/30 to-red-50/50 dark:from-orange-950/20 dark:via-gray-900/30 dark:to-red-950/20 pointer-events-none" />
+
+        <div className="relative p-5 lg:p-6">
+          <DialogHeader className="mb-6 lg:mb-7">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="relative">
+                <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/25">
+                  <Plus className="w-5 h-5 text-white" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                  <Sparkles className="w-2.5 h-2.5 text-white" />
+                </div>
               </div>
               <div>
-                <DialogTitle className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
+                <DialogTitle className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent">
                   Add Table
                 </DialogTitle>
-                <DialogDescription className="text-gray-600 dark:text-gray-400">
+                <DialogDescription className="text-gray-600 dark:text-gray-400 mt-0.5 text-sm">
                   Add a new table to your restaurant floor plan
                 </DialogDescription>
               </div>
@@ -150,52 +157,66 @@ export default function AddTableModal({ isOpen, onClose }: AddTableModalProps) {
 
           <div className="space-y-6">
             {/* Basic Information */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                <Settings className="w-4 h-4" />
-                <h3 className="font-medium">Basic Information</h3>
-              </div>
+            <Card className="bg-gray-50/50 dark:bg-gray-800/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                  Basic Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="tableNumber">Table Number *</Label>
-                  <Input
-                    id="tableNumber"
-                    value={formData.tableNumber}
-                    onChange={(e) => handleInputChange('tableNumber', e.target.value)}
-                    placeholder="e.g., 12, A1, VIP1"
-                    className={`w-full ${errors.tableNumber ? 'border-red-500 focus:border-red-500' : ''}`}
-                  />
-                  {errors.tableNumber && (
-                    <p className="text-sm text-red-500 mt-1">{errors.tableNumber}</p>
-                  )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="tableNumber" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Table Number *
+                    </Label>
+                    <Input
+                      id="tableNumber"
+                      value={formData.tableNumber}
+                      onChange={(e) => handleInputChange('tableNumber', e.target.value)}
+                      placeholder="e.g., 12, A1, VIP1"
+                      className={`w-full h-11 bg-white/90 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-600 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200 ${
+                        errors.tableNumber ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
+                      }`}
+                    />
+                    {errors.tableNumber && (
+                      <p className="text-sm text-red-500 mt-1">{errors.tableNumber}</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="capacity" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Capacity *
+                    </Label>
+                    <Select value={formData.capacity} onValueChange={(value) => handleInputChange('capacity', value)}>
+                      <SelectTrigger className={`h-11 bg-white/90 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-600 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200 ${
+                        errors.capacity ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
+                      }`}>
+                        <SelectValue placeholder="Select capacity" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {capacities.map((capacity) => (
+                          <SelectItem key={capacity.value} value={capacity.value}>
+                            {capacity.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.capacity && (
+                      <p className="text-sm text-red-500 mt-1">{errors.capacity}</p>
+                    )}
+                  </div>
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="capacity">Capacity *</Label>
-                  <Select value={formData.capacity} onValueChange={(value) => handleInputChange('capacity', value)}>
-                    <SelectTrigger className={errors.capacity ? 'border-red-500 focus:border-red-500' : ''}>
-                      <SelectValue placeholder="Select capacity" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {capacities.map((capacity) => (
-                        <SelectItem key={capacity.value} value={capacity.value}>
-                          {capacity.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.capacity && (
-                    <p className="text-sm text-red-500 mt-1">{errors.capacity}</p>
-                  )}
-                </div>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="tableType">Table Type</Label>
+                  <Label htmlFor="tableType" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Table Type *
+                  </Label>
                   <Select value={formData.tableType} onValueChange={(value) => handleInputChange('tableType', value)}>
-                    <SelectTrigger className={errors.tableType ? 'border-red-500 focus:border-red-500' : ''}>
+                    <SelectTrigger className={`h-11 bg-white/90 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-600 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200 ${
+                      errors.tableType ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
+                    }`}>
                       <SelectValue placeholder="Select table type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -208,245 +229,220 @@ export default function AddTableModal({ isOpen, onClose }: AddTableModalProps) {
                   </Select>
                   {errors.tableType && (
                     <p className="text-sm text-red-500 mt-1">{errors.tableType}</p>
-                  )}
+                    )}
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="location">Location *</Label>
-                  <Select value={formData.location} onValueChange={(value) => handleInputChange('location', value)}>
-                    <SelectTrigger className={errors.location ? 'border-red-500 focus:border-red-500' : ''}>
-                      <SelectValue placeholder="Select location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {locations.map((location) => (
-                        <SelectItem key={location} value={location}>
-                          {location}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.location && (
-                    <p className="text-sm text-red-500 mt-1">{errors.location}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <Separator />
+              </CardContent>
+            </Card>
 
             {/* Active Status */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                <Star className="w-4 h-4" />
-                <h3 className="font-medium">Active Status</h3>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Label htmlFor="isActive" className="text-sm font-medium">
-                    Active
-                  </Label>
-                  <span className="text-sm text-gray-500">Table is available for seating</span>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Star className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                  Active Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Label htmlFor="isActive" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Active
+                    </Label>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">Table is available for seating</span>
+                  </div>
+                  <Switch
+                    id="isActive"
+                    checked={formData.isActive}
+                    onCheckedChange={(checked) => handleInputChange('isActive', checked)}
+                  />
                 </div>
-                <Switch
-                  id="isActive"
-                  checked={formData.isActive}
-                  onCheckedChange={(checked) => handleInputChange('isActive', checked)}
-                />
-              </div>
-            </div>
-
-            <Separator />
+              </CardContent>
+            </Card>
 
             {/* Features & Accessibility */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                <Settings className="w-4 h-4" />
-                <h3 className="font-medium">Features & Accessibility</h3>
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Label htmlFor="hasWifi" className="flex items-center gap-2 text-sm font-medium">
-                      <Wifi className="w-4 h-4" />
-                      <span>WiFi Access</span>
-                    </Label>
-                    <span className="text-sm text-gray-500">Premium WiFi available</span>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                  Features & Accessibility
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Label htmlFor="hasWifi" className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <Wifi className="w-4 h-4 text-blue-600" />
+                        <span>WiFi Access</span>
+                      </Label>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Premium WiFi available</span>
+                    </div>
+                    <Switch
+                      id="hasWifi"
+                      checked={formData.hasWifi}
+                      onCheckedChange={(checked) => handleInputChange('hasWifi', checked)}
+                    />
                   </div>
-                  <Switch
-                    id="hasWifi"
-                    checked={formData.hasWifi}
-                    onCheckedChange={(checked) => handleInputChange('hasWifi', checked)}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Label htmlFor="isAccessible" className="flex items-center gap-2 text-sm font-medium">
-                      <UserCheck className="w-4 h-4" />
-                      <span>Accessible</span>
-                    </Label>
-                    <span className="text-sm text-gray-500">Wheelchair accessible</span>
-                  </div>
-                  <Switch
-                    id="isAccessible"
-                    checked={formData.isAccessible}
-                    onCheckedChange={(checked) => handleInputChange('isAccessible', checked)}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Label htmlFor="hasChargingPorts" className="flex items-center gap-2 text-sm font-medium">
-                    <Zap className="w-4 h-4" />
-                    <span>Charging Ports</span>
-                  </Label>
-                  <span className="text-sm text-gray-500">USB/Power outlets available</span>
-                </div>
-                <Switch
-                  id="hasChargingPorts"
-                  checked={formData.hasChargingPorts}
-                  onCheckedChange={(checked) => handleInputChange('hasChargingPorts', checked)}
-                />
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Additional Features */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                <Star className="w-4 h-4" />
-                <h3 className="font-medium">Additional Features</h3>
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="minimumSpend">Minimum Spend</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                    <Input
-                      id="minimumSpend"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.minimumSpend}
-                      onChange={(e) => handleInputChange('minimumSpend', e.target.value)}
-                      placeholder="0.00"
-                      className="pl-8"
+                  
+                  <div className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Label htmlFor="isAccessible" className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <UserCheck className="w-4 h-4 text-green-600" />
+                        <span>Accessible</span>
+                      </Label>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Wheelchair accessible</span>
+                    </div>
+                    <Switch
+                      id="isAccessible"
+                      checked={formData.isAccessible}
+                      onCheckedChange={(checked) => handleInputChange('isAccessible', checked)}
                     />
                   </div>
                 </div>
-                
+
+                <div className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Label htmlFor="hasChargingPorts" className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <Zap className="w-4 h-4 text-yellow-600" />
+                      <span>Charging Ports</span>
+                    </Label>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">USB/Power outlets available</span>
+                  </div>
+                  <Switch
+                    id="hasChargingPorts"
+                    checked={formData.hasChargingPorts}
+                    onCheckedChange={(checked) => handleInputChange('hasChargingPorts', checked)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Additional Features */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Star className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                  Additional Features
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+              
                 <div className="space-y-2">
-                  <Label htmlFor="notes">Table Notes</Label>
+                  <Label htmlFor="notes" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Table Notes
+                  </Label>
                   <Input
                     id="notes"
                     value={formData.notes}
                     onChange={(e) => handleInputChange('notes', e.target.value)}
                     placeholder="Add any additional details about this table..."
-                    className="w-full"
+                    className="w-full h-11 bg-white/90 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-600 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200"
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="isReserved" className="text-sm font-medium">Reserved Table</Label>
-                  <Switch
-                    id="isReserved"
-                    checked={formData.isReserved}
-                    onCheckedChange={(checked) => handleInputChange('isReserved', checked)}
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <Label htmlFor="isReserved" className="text-sm font-medium text-gray-700 dark:text-gray-300">Reserved Table</Label>
+                    <Switch
+                      id="isReserved"
+                      checked={formData.isReserved}
+                      onCheckedChange={(checked) => handleInputChange('isReserved', checked)}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <Label htmlFor="isVIP" className="text-sm font-medium text-gray-700 dark:text-gray-300">VIP Table</Label>
+                    <Switch
+                      id="isVIP"
+                      checked={formData.isVIP}
+                      onCheckedChange={(checked) => handleInputChange('isVIP', checked)}
+                    />
+                  </div>
                 </div>
-                
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="isVIP" className="text-sm font-medium">VIP Table</Label>
-                  <Switch
-                    id="isVIP"
-                    checked={formData.isVIP}
-                    onCheckedChange={(checked) => handleInputChange('isVIP', checked)}
-                  />
-                </div>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="isOutdoor" className="text-sm font-medium">Outdoor Table</Label>
-                  <Switch
-                    id="isOutdoor"
-                    checked={formData.isOutdoor}
-                    onCheckedChange={(checked) => handleInputChange('isOutdoor', checked)}
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <Label htmlFor="isOutdoor" className="text-sm font-medium text-gray-700 dark:text-gray-300">Outdoor Table</Label>
+                    <Switch
+                      id="isOutdoor"
+                      checked={formData.isOutdoor}
+                      onCheckedChange={(checked) => handleInputChange('isOutdoor', checked)}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <Label htmlFor="hasView" className="text-sm font-medium text-gray-700 dark:text-gray-300">Premium View</Label>
+                    <Switch
+                      id="hasView"
+                      checked={formData.hasView}
+                      onCheckedChange={(checked) => handleInputChange('hasView', checked)}
+                    />
+                  </div>
                 </div>
-                
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="hasView" className="text-sm font-medium">Premium View</Label>
-                  <Switch
-                    id="hasView"
-                    checked={formData.hasView}
-                    onCheckedChange={(checked) => handleInputChange('hasView', checked)}
-                  />
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
 
 
             {/* Table Summary */}
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Table Number:</span>
-                  <span className="font-medium">{formData.tableNumber || 'Not specified'}</span>
+            <Card className="bg-gradient-to-r from-orange-50/50 via-white/30 to-red-50/50 dark:from-orange-950/20 dark:via-gray-900/30 dark:to-red-950/20 border-orange-200/50 dark:border-orange-700/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Plus className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                  Table Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Table Number:</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{formData.tableNumber || 'Not specified'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Capacity:</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{formData.capacity ? `${formData.capacity} seats` : 'Not specified'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Type:</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{formData.tableType || 'Not specified'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Status:</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{formData.isActive ? 'Active' : 'Inactive'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Features:</span>
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {[
+                        formData.hasWifi && 'WiFi',
+                        formData.isAccessible && 'Accessible',
+                        formData.hasChargingPorts && 'Charging'
+                      ].filter(Boolean).join(', ') || 'None'}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Capacity:</span>
-                  <span className="font-medium">{formData.capacity ? `${formData.capacity} seats` : 'Not specified'}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Type:</span>
-                  <span className="font-medium">{formData.tableType || 'Not specified'}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Location:</span>
-                  <span className="font-medium">{formData.location || 'Not specified'}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Status:</span>
-                  <span className="font-medium">{formData.isActive ? 'Active' : 'Inactive'}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Features:</span>
-                  <span className="font-medium">
-                    {[
-                      formData.hasWifi && 'WiFi',
-                      formData.isAccessible && 'Accessible',
-                      formData.hasChargingPorts && 'Charging'
-                    ].filter(Boolean).join(', ') || 'None'}
-                  </span>
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
 
-          <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <Button
-              variant="ghost"
-              onClick={onClose}
-              className="px-6 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={isSubmitting}
-              className="px-8 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:opacity-90 transition-opacity duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? 'Adding...' : 'Add Table'}
-            </Button>
+          {/* Action Buttons */}
+          <div className="relative mt-6">
+            <div className="flex items-center justify-between pt-6">
+              <Button
+                variant="ghost"
+                onClick={onClose}
+                className="px-6 py-3 h-auto text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all duration-200 font-medium"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={isSubmitting}
+                className="px-8 py-3 h-auto bg-gradient-to-r from-orange-500 via-red-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:via-red-600 hover:to-orange-700 transition-all duration-200 shadow-lg shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/30 transform hover:scale-[1.02] font-semibold relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? 'Adding...' : 'Add Table'}
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>

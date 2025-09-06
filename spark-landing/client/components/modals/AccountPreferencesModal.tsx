@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { getModalClasses, MODAL_CONFIGS } from '../../utils/modalSizes';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -7,16 +6,19 @@ import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Separator } from '../ui/separator';
-import { Settings, User, Bell, Eye, Shield, Globe } from 'lucide-react';
-import { 
-  formatPhoneNumber, 
-  validatePhoneNumber, 
+import { Settings, User, Bell, Eye, Shield, Globe, Sparkles } from 'lucide-react';
+import {
+  formatPhoneNumber,
+  validatePhoneNumber,
   getPhoneError,
-  validateEmail, 
+  validateEmail,
   getEmailError,
   validateName,
   getNameError
 } from '../../utils/validation';
+import MissingInformationModal from './MissingInformationModal';
+import ErrorModal from './ErrorModal';
+import ConfirmationModal from './ConfirmationModal';
 
 interface AccountPreferencesModalProps {
   isOpen: boolean;
@@ -49,6 +51,13 @@ export default function AccountPreferencesModal({ isOpen, onClose }: AccountPref
     phone: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Standard modal states
+  const [showMissingInfoModal, setShowMissingInfoModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [missingFields, setMissingFields] = useState<string[]>([]);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -84,7 +93,7 @@ export default function AccountPreferencesModal({ isOpen, onClose }: AccountPref
     setErrors(prev => ({ ...prev, [field]: nameError }));
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     // Validate all fields
     const newErrors = {
       firstName: getNameError(formData.firstName),
@@ -97,16 +106,39 @@ export default function AccountPreferencesModal({ isOpen, onClose }: AccountPref
 
     // Check if there are any errors
     if (Object.values(newErrors).some(error => error !== '')) {
+      setMissingFields(Object.entries(newErrors)
+        .filter(([_, error]) => error !== '')
+        .map(([field, error]) => {
+          const fieldNames: { [key: string]: string } = {
+            firstName: 'First Name',
+            lastName: 'Last Name',
+            email: 'Email Address',
+            phone: 'Phone Number'
+          };
+          return fieldNames[field] || field;
+        })
+      );
+      setShowMissingInfoModal(true);
       return;
     }
 
+    // Show confirmation modal
+    setShowConfirmationModal(true);
+  };
+
+  const handleConfirmSave = async () => {
     setIsSubmitting(true);
 
     try {
-      console.log('Saving account preferences:', formData);
+      setShowConfirmationModal(false);
       onClose();
     } catch (error) {
-      console.error('Error saving account preferences:', error);
+      const errorMsg = error instanceof Error
+        ? error.message
+        : 'Failed to save account preferences. Please try again.';
+      setErrorMessage(errorMsg);
+      setShowErrorModal(true);
+      setShowConfirmationModal(false);
     } finally {
       setIsSubmitting(false);
     }
@@ -114,18 +146,27 @@ export default function AccountPreferencesModal({ isOpen, onClose }: AccountPref
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={getModalClasses('FORM')}>
-        <div className="p-6 sm:p-8">
-          <DialogHeader className="mb-6 sm:mb-8">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                <Settings className="w-5 h-5 text-white" />
+      <DialogContent className="max-w-3xl mx-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-0 shadow-2xl rounded-3xl max-h-[85vh] overflow-y-auto">
+        {/* Animated background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 via-white/30 to-pink-50/50 dark:from-purple-950/20 dark:via-gray-900/30 dark:to-pink-950/20 pointer-events-none" />
+
+        <div className="relative p-5 lg:p-6">
+          {/* Enhanced Header */}
+          <DialogHeader className="mb-6 lg:mb-7">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="relative">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 via-pink-500 to-rose-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/25">
+                  <Settings className="w-5 h-5 text-white" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                  <Sparkles className="w-2.5 h-2.5 text-white" />
+                </div>
               </div>
               <div>
-                <DialogTitle className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
+                <DialogTitle className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent">
                   Account Preferences
                 </DialogTitle>
-                <DialogDescription className="text-gray-600 dark:text-gray-400">
+                <DialogDescription className="text-gray-600 dark:text-gray-400 mt-0.5 text-sm">
                   Manage your account settings and preferences
                 </DialogDescription>
               </div>
@@ -134,10 +175,12 @@ export default function AccountPreferencesModal({ isOpen, onClose }: AccountPref
 
           <div className="space-y-6">
             {/* Personal Information */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <User className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Personal Information</h3>
+            <div className="group">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Personal Information</h3>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -211,10 +254,12 @@ export default function AccountPreferencesModal({ isOpen, onClose }: AccountPref
             <Separator />
 
             {/* Localization */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Globe className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Localization</h3>
+            <div className="group">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/25">
+                  <Globe className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Localization</h3>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -256,10 +301,12 @@ export default function AccountPreferencesModal({ isOpen, onClose }: AccountPref
             <Separator />
 
             {/* Notifications */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Bell className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Notifications</h3>
+            <div className="group">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/25">
+                  <Bell className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Notifications</h3>
               </div>
               
               <div className="space-y-3">
@@ -328,10 +375,12 @@ export default function AccountPreferencesModal({ isOpen, onClose }: AccountPref
             <Separator />
 
             {/* Security */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Security</h3>
+            <div className="group">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-rose-500 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/25">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Security</h3>
               </div>
               
               <div className="space-y-3">
@@ -367,7 +416,7 @@ export default function AccountPreferencesModal({ isOpen, onClose }: AccountPref
             </div>
 
             {/* Action Buttons */}
-            <div className="flex justify-end gap-3 pt-4">
+            <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
               <Button
                 variant="ghost"
                 onClick={onClose}
@@ -378,7 +427,7 @@ export default function AccountPreferencesModal({ isOpen, onClose }: AccountPref
               <Button
                 onClick={handleSave}
                 disabled={isSubmitting}
-                className="px-8 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:opacity-90 transition-opacity duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-8 py-2 bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 text-white rounded-xl hover:opacity-90 transition-opacity duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? 'Saving...' : 'Save Changes'}
               </Button>
@@ -386,6 +435,40 @@ export default function AccountPreferencesModal({ isOpen, onClose }: AccountPref
           </div>
         </div>
       </DialogContent>
+
+      {/* Standard Modal Components */}
+      <MissingInformationModal
+        isOpen={showMissingInfoModal}
+        onClose={() => setShowMissingInfoModal(false)}
+        title="Missing Information"
+        message="Please fill in all required fields before saving."
+        missingFields={missingFields}
+      />
+
+      <ErrorModal
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title="Save Failed"
+        message="Unable to save account preferences."
+        error={errorMessage}
+        showRetry={true}
+        onRetry={() => {
+          setShowErrorModal(false);
+          handleConfirmSave();
+        }}
+      />
+
+      <ConfirmationModal
+        isOpen={showConfirmationModal}
+        onClose={() => setShowConfirmationModal(false)}
+        onConfirm={handleConfirmSave}
+        title="Save Account Preferences"
+        message="Are you sure you want to save these account preferences?"
+        confirmText="Save Changes"
+        cancelText="Cancel"
+        type="info"
+        isLoading={isSubmitting}
+      />
     </Dialog>
   );
 }

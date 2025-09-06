@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { 
-  validateEmail, 
+import {
+  validateEmail,
   getEmailError,
   validateRequired,
   getRequiredError,
@@ -9,8 +9,7 @@ import {
   validateName,
   getNameError
 } from '../../utils/validation';
-import { useToast } from '../../hooks/use-toast';
-import { getModalClasses, MODAL_CONFIGS } from '../../utils/modalSizes';
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -22,16 +21,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { 
-  Store, 
-  Clock, 
-  Users, 
-  MapPin, 
-  Phone, 
-  Mail, 
-  Globe, 
-  Plus, 
-  Trash2, 
+import {
+  Store,
+  Clock,
+  Users,
+  MapPin,
+  Phone,
+  Mail,
+  Globe,
+  Plus,
+  Trash2,
   Edit,
   Calendar,
   User,
@@ -41,10 +40,15 @@ import {
   CheckCircle,
   Check,
   ChevronsUpDown,
-  MessageSquare
+  MessageSquare,
+  Sparkles
 } from 'lucide-react';
 import AddStaffModal from './AddStaffModal';
 import { Combobox } from '../ui/combobox';
+import MissingInformationModal from './MissingInformationModal';
+import ErrorModal from './ErrorModal';
+import ConfirmationModal from './ConfirmationModal';
+import { useToast } from '../../hooks/use-toast';
 
 interface RestaurantPreferencesModalProps {
   isOpen: boolean;
@@ -92,11 +96,13 @@ const PRICE_RANGES = [
 ];
 
 export default function RestaurantPreferencesModal({ isOpen, onClose }: RestaurantPreferencesModalProps) {
-  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('restaurant');
   const [inviteCode] = useState('SILEX2024');
   const [copiedInviteCode, setCopiedInviteCode] = useState(false);
   const [isAddStaffModalOpen, setIsAddStaffModalOpen] = useState(false);
+
+  // Toast hook
+  const { toast } = useToast();
 
   // Restaurant Information State
   const [restaurantInfo, setRestaurantInfo] = useState({
@@ -137,6 +143,13 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
   ]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Standard modal states
+  const [showMissingInfoModal, setShowMissingInfoModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [missingFields, setMissingFields] = useState<string[]>([]);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleRestaurantInfoChange = (field: string, value: string) => {
     setRestaurantInfo(prev => ({ ...prev, [field]: value }));
@@ -187,11 +200,11 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
   const removeStaff = (id: number) => {
     const staffMember = staff.find(s => s.id === id);
     setStaff(staff.filter(s => s.id !== id));
-    
-    // Show success toast
+
+    // Show removal toast
     toast({
       title: "Staff Member Removed",
-      description: `${staffMember?.name || 'Staff member'} has been removed from the team.`,
+      description: `${staffMember?.name || 'Staff member'} has been removed from the team`,
       variant: "default",
     });
   };
@@ -203,11 +216,11 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
     setStaff(staff.map(s => 
       s.id === id ? { ...s, isActive: newStatus } : s
     ));
-    
-    // Show success toast
+
+    // Show status update toast
     toast({
       title: "Staff Status Updated",
-      description: `${staffMember?.name || 'Staff member'} is now ${newStatus ? 'active' : 'inactive'}.`,
+      description: `${staffMember?.name || 'Staff member'} has been ${newStatus ? 'activated' : 'deactivated'}`,
       variant: "default",
     });
   };
@@ -256,41 +269,45 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!validateForm()) {
-      toast({
-        title: "Validation Error",
-        description: "Please fix the errors in the form before saving.",
-        variant: "destructive",
-      });
+      setMissingFields(Object.entries(errors)
+        .filter(([_, error]) => error !== '')
+        .map(([field, error]) => {
+          const fieldNames: { [key: string]: string } = {
+            restaurantName: 'Restaurant Name',
+            restaurantAddress: 'Restaurant Address',
+            restaurantPhone: 'Restaurant Phone',
+            restaurantEmail: 'Restaurant Email',
+            restaurantCuisine: 'Cuisine Type',
+            restaurantCapacity: 'Capacity',
+            restaurantPriceRange: 'Price Range',
+            restaurantHours: 'Operating Hours'
+          };
+          return fieldNames[field] || field;
+        })
+      );
+      setShowMissingInfoModal(true);
       return;
     }
-    
+
+    // Show confirmation modal
+    setShowConfirmationModal(true);
+  };
+
+  const handleConfirmSave = async () => {
     setIsSubmitting(true);
-    
+
     try {
-      console.log('Saving restaurant preferences:', { restaurantInfo, hours, holidays, staff });
-      
-      // Show success toast
-      toast({
-        title: "Preferences Saved Successfully!",
-        description: "Your restaurant preferences have been updated.",
-        variant: "default",
-      });
-      
-      // Close modal after showing toast
-      setTimeout(() => {
-        onClose();
-      }, 1500);
+      setShowConfirmationModal(false);
+      onClose();
     } catch (error) {
-      console.error('Error saving restaurant preferences:', error);
-      
-      // Show error toast
-      toast({
-        title: "Error",
-        description: "Failed to save preferences. Please try again.",
-        variant: "destructive",
-      });
+      const errorMsg = error instanceof Error
+        ? error.message
+        : 'Failed to save restaurant preferences. Please try again.';
+      setErrorMessage(errorMsg);
+      setShowErrorModal(true);
+      setShowConfirmationModal(false);
     } finally {
       setIsSubmitting(false);
     }
@@ -308,11 +325,11 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
       ...staffData
     };
     setStaff([...staff, newStaff]);
-    
+
     // Show success toast
     toast({
-      title: "Staff Member Added!",
-      description: `${staffData.name} has been added to the team.`,
+      title: "Staff Member Added",
+      description: `${staffData.name} has been added to the team`,
       variant: "default",
     });
   };
@@ -322,11 +339,11 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
     const body = `Hi ${name},\n\nYou've been invited to join the Silex Restaurant team!\n\nUse this invite code: ${inviteCode}\n\nBest regards,\nSilex Restaurant Team`;
     const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(mailtoLink);
-    
-    // Show success toast
+
+    // Show email invite toast
     toast({
-      title: "Email Invite Sent!",
-      description: `Invitation email sent to ${email}`,
+      title: "Email Invite Sent",
+      description: `Invitation sent to ${email}`,
       variant: "default",
     });
   };
@@ -335,11 +352,11 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
     const message = `Hi ${name}, you've been invited to join Silex Restaurant! Use invite code: ${inviteCode}`;
     const smsLink = `sms:${phone.replace(/\D/g, '')}?body=${encodeURIComponent(message)}`;
     window.open(smsLink);
-    
-    // Show success toast
+
+    // Show SMS invite toast
     toast({
-      title: "SMS Invite Sent!",
-      description: `Invitation SMS sent to ${phone}`,
+      title: "SMS Invite Sent",
+      description: `SMS invite sent to ${phone}`,
       variant: "default",
     });
   };
@@ -347,14 +364,14 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
   const copyInviteCode = () => {
     navigator.clipboard.writeText(inviteCode);
     setCopiedInviteCode(true);
-    
+
     // Show success toast
     toast({
-      title: "Invite Code Copied!",
-      description: "Invite code copied to clipboard",
+      title: "Invite Code Copied",
+      description: "Invite code has been copied to clipboard",
       variant: "default",
     });
-    
+
     setTimeout(() => setCopiedInviteCode(false), 2000);
   };
 
@@ -372,18 +389,27 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={getModalClasses('COMPLEX_FORM')}>
-        <div className="p-6 sm:p-8">
-          <DialogHeader className="mb-6 sm:mb-8">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-teal-500 rounded-xl flex items-center justify-center">
-                <Store className="w-5 h-5 text-white" />
+      <DialogContent className="max-w-3xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-0 shadow-2xl rounded-3xl overflow-hidden max-h-[85vh] overflow-y-auto ml-[132px]">
+        {/* Animated background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-green-50/50 via-white/30 to-teal-50/50 dark:from-green-950/20 dark:via-gray-900/30 dark:to-teal-950/20 pointer-events-none" />
+
+        <div className="relative p-5 lg:p-6">
+          {/* Enhanced Header */}
+          <DialogHeader className="mb-6 lg:mb-7">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="relative">
+                <div className="w-10 h-10 bg-gradient-to-br from-green-500 via-teal-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/25">
+                  <Store className="w-5 h-5 text-white" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                  <Sparkles className="w-2.5 h-2.5 text-white" />
+                </div>
               </div>
               <div>
-                <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white">
+                <DialogTitle className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent">
                   Restaurant Preferences
                 </DialogTitle>
-                <DialogDescription className="text-gray-600 dark:text-gray-400">
+                <DialogDescription className="text-gray-600 dark:text-gray-400 mt-0.5 text-sm">
                   Manage your restaurant settings and information
                 </DialogDescription>
               </div>
@@ -391,10 +417,10 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
-              <TabsTrigger value="restaurant">Restaurant Info</TabsTrigger>
-              <TabsTrigger value="hours">Hours</TabsTrigger>
-              <TabsTrigger value="staff">Staff</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 mb-6 bg-gray-100 dark:bg-gray-800/50 p-1 rounded-xl border border-gray-200 dark:border-gray-700">
+              <TabsTrigger value="restaurant" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm">Restaurant Info</TabsTrigger>
+              <TabsTrigger value="hours" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm">Hours</TabsTrigger>
+              <TabsTrigger value="staff" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm">Staff</TabsTrigger>
             </TabsList>
 
             {/* Restaurant Info Tab */}
@@ -831,19 +857,53 @@ export default function RestaurantPreferencesModal({ isOpen, onClose }: Restaura
             <Button
               onClick={handleSave}
               disabled={isSubmitting}
-              className="px-8 py-2 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-xl hover:opacity-90 transition-opacity duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-8 py-2 bg-gradient-to-r from-green-500 via-teal-500 to-emerald-500 text-white rounded-xl hover:opacity-90 transition-opacity duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </div>
       </DialogContent>
-      
+
       {/* Add Staff Modal */}
-      <AddStaffModal 
-        isOpen={isAddStaffModalOpen} 
-        onClose={() => setIsAddStaffModalOpen(false)} 
+      <AddStaffModal
+        isOpen={isAddStaffModalOpen}
+        onClose={() => setIsAddStaffModalOpen(false)}
         onAddStaff={handleAddStaff}
+      />
+
+      {/* Standard Modal Components */}
+      <MissingInformationModal
+        isOpen={showMissingInfoModal}
+        onClose={() => setShowMissingInfoModal(false)}
+        title="Missing Information"
+        message="Please fill in all required fields before saving."
+        missingFields={missingFields}
+      />
+
+      <ErrorModal
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title="Save Failed"
+        message="Unable to save restaurant preferences."
+        error={errorMessage}
+        showRetry={true}
+        onRetry={() => {
+          setShowErrorModal(false);
+          handleConfirmSave();
+        }}
+      />
+
+      <ConfirmationModal
+        isOpen={showConfirmationModal}
+        onClose={() => setShowConfirmationModal(false)}
+        onConfirm={handleConfirmSave}
+        title="Save Restaurant Preferences"
+        message="Are you sure you want to save these restaurant preferences?"
+        confirmText="Save Changes"
+        cancelText="Cancel"
+        type="info"
+        isLoading={isSubmitting}
       />
     </Dialog>
   );

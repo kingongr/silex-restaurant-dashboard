@@ -59,7 +59,6 @@ export function useAutoSave<T>(
         }
       }
     } catch (error) {
-      console.warn('Failed to load auto-saved data:', error);
     }
   }, [key, enabled, onLoad]);
 
@@ -87,7 +86,6 @@ export function useAutoSave<T>(
         await onSave(dataToSave);
       }
     } catch (error) {
-      console.error('Auto-save failed:', error);
       setAutoSaveState(prev => ({ ...prev, isSaving: false }));
     }
   }, [key, enabled, onSave]);
@@ -133,7 +131,6 @@ export function useAutoSave<T>(
         hasUnsavedChanges: false
       }));
     } catch (error) {
-      console.warn('Failed to clear auto-saved data:', error);
     }
   }, [key]);
 

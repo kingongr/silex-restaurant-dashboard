@@ -33,7 +33,6 @@ export default function ForgotPassword() {
       setIsSuccess(true)
     } catch (err) {
       setError('An error occurred. Please try again.')
-      console.error('Password reset error:', err)
     } finally {
       setIsLoading(false)
     }

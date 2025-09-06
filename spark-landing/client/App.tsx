@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { AuthProvider } from "./contexts/AuthContext";
+import { ModalProvider } from "./contexts/ModalContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import DashboardContent from "./components/dashboard/DashboardContent";
@@ -52,17 +53,17 @@ const AppContent = () => {
   };
 
   const handleLogout = () => {
-    console.log('Logout clicked');
     // In a real app, this would handle authentication logout
   };
 
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+        <ModalProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
             <Routes>
               {/* Public Routes - Login System (Separate from Dashboard) */}
               <Route path="/login" element={<Login />} />
@@ -137,7 +138,8 @@ const AppContent = () => {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
-        </TooltipProvider>
+          </TooltipProvider>
+        </ModalProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

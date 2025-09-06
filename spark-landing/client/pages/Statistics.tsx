@@ -177,31 +177,24 @@ export default function Statistics() {
 
   // Log data changes for debugging (would be replaced with database calls)
   useEffect(() => {
-    console.log('Data updated:', {
-      period: selectedPeriod,
-      filters: { orderTypeFilter, daypartFilter },
-      insightsData
-    });
-    
-    // In a real implementation, this would trigger:
-    // 1. Database queries with new period and filters
-    // 2. API calls to fetch updated statistics
-    // 3. Real-time data updates
-    // 4. Cache invalidation and refresh
+    // Debug logging removed - would be replaced with database calls
   }, [selectedPeriod, orderTypeFilter, daypartFilter, insightsData]);
 
+  // In a real implementation, this would trigger:
+  // 1. Database queries with new period and filters
+  // 2. API calls to fetch updated statistics
+  // 3. Real-time data updates
+  // 4. Cache invalidation and refresh
+
   const handleExport = (format: 'csv' | 'pdf') => {
-    console.log(`Exporting data as ${format.toUpperCase()}`);
     // Export functionality would be implemented here
   };
 
   const handleRefresh = () => {
-    console.log('Refreshing statistics data...');
     // Refresh functionality would be implemented here
   };
 
   const handleFilterChange = (filterType: string, value: string) => {
-    console.log(`Filter changed: ${filterType} = ${value}`);
     
     if (filterType === 'orderType') {
       setOrderTypeFilter(orderTypeFilter === value ? null : value);
@@ -216,7 +209,6 @@ export default function Statistics() {
   const clearAllFilters = () => {
     setOrderTypeFilter(null);
     setDaypartFilter(null);
-    console.log('All filters cleared');
   };
 
   return (

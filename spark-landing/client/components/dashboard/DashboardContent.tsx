@@ -1,29 +1,25 @@
 import React, { useState, useRef } from 'react';
-import { 
-  ShoppingCart, 
-  DollarSign, 
-  Users, 
-  Clock, 
-  MenuIcon as Menu, 
+import {
+  ShoppingCart,
+  DollarSign,
+  Users,
+  Clock,
+  Menu,
   Star,
   Plus,
   TrendingUp,
   Activity,
   MoreHorizontal,
   Edit,
-  Settings,
   Trash2,
   Move,
-  AlertCircle,
-  Database,
-  Bell
+  Database
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
-import { useScrollY } from '../../hooks/useScrollY';
 import EnhancedKPICard from './EnhancedKPICard';
 import AddMenuItemModal from '../modals/AddMenuItemModal';
 import AddOrderModal from '../modals/AddOrderModal';
@@ -51,53 +47,6 @@ export default function DashboardContent({ user }: DashboardContentProps) {
   const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
   const [isTableModalOpen, setIsTableModalOpen] = useState(false);
   const [isEditKPIModalOpen, setIsEditKPIModalOpen] = useState(false);
-  const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
-
-  // Mock notifications data for dashboard
-  const mockDashboardNotifications = [
-    {
-      id: '1',
-      type: 'system_update',
-      title: 'System Update Available 🔧',
-      message: 'New dashboard features have been added. Refresh to see the latest updates.',
-      time: '5 minutes ago',
-      isRead: false,
-      priority: 'medium'
-    },
-    {
-      id: '2',
-      type: 'performance_alert',
-      title: 'Performance Alert 📊',
-      message: 'Your restaurant is performing above average today! Great job team.',
-      time: '1 hour ago',
-      isRead: false,
-      priority: 'low'
-    },
-    {
-      id: '3',
-      type: 'maintenance_reminder',
-      title: 'Maintenance Reminder ⏰',
-      message: 'Scheduled system maintenance will begin at 2:00 AM tonight.',
-      time: '3 hours ago',
-      isRead: true,
-      priority: 'medium'
-    },
-    {
-      id: '4',
-      type: 'new_feature',
-      title: 'New Feature Available ✨',
-      message: 'Advanced analytics dashboard is now available for premium users.',
-      time: '1 day ago',
-      isRead: true,
-      priority: 'low'
-    }
-  ];
-
-  const unreadCount = mockDashboardNotifications.filter(n => !n.isRead).length;
-
-  // Scroll behavior for floating notification bell
-  const bellRef = useRef<HTMLDivElement>(null);
-  const { scrollY, getAdaptiveScrollTransform } = useScrollY();
 
   const quickActions = [
     {
@@ -348,127 +297,7 @@ export default function DashboardContent({ user }: DashboardContentProps) {
         onClose={() => setIsTableModalOpen(false)} 
       />
 
-      {/* Notifications Modal */}
-      <Dialog open={isNotificationsModalOpen} onOpenChange={setIsNotificationsModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Bell className="w-5 h-5" />
-              Notifications Center
-              {unreadCount > 0 && (
-                <Badge className="ml-2 bg-red-500 text-white">
-                  {unreadCount} new
-                </Badge>
-              )}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-            {mockDashboardNotifications.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Bell className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium">No notifications yet</p>
-                <p className="text-sm">You'll see important updates here</p>
-              </div>
-            ) : (
-              mockDashboardNotifications.map((notification) => {
-                const priorityColors = {
-                  high: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700',
-                  medium: 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700',
-                  low: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700'
-                };
-                
-                const priorityIcons = {
-                  high: '🔴',
-                  medium: '🟡',
-                  low: '🔵'
-                };
-                
-                return (
-                  <div 
-                    key={notification.id}
-                    className={`p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer ${
-                      !notification.isRead ? priorityColors[notification.priority as keyof typeof priorityColors] : ''
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="mt-1 text-lg">
-                        {priorityIcons[notification.priority as keyof typeof priorityIcons]}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-semibold text-foreground">
-                            {notification.title}
-                          </h4>
-                          <span className="text-xs text-muted-foreground">
-                            {notification.time}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {notification.message}
-                        </p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Badge variant="outline" className="text-xs">
-                            {notification.priority} priority
-                          </Badge>
-                        </div>
-                      </div>
-                      {!notification.isRead && (
-                        <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2"></div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-          
-          <div className="flex items-center justify-between pt-4 border-t border-border">
-            <p className="text-sm text-muted-foreground">
-              {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
-            </p>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => {
-                // Mark all as read logic
-                const updatedNotifications = mockDashboardNotifications.map(notification => ({
-                  ...notification,
-                  isRead: true
-                }));
-                // In a real app, this would update the state and send to backend
-                console.log('Mark all as read clicked');
-                // For now, just log the action
-                alert('All notifications marked as read!');
-              }}
-            >
-              Mark all as read
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
-      {/* Floating Notification Button */}
-      <div 
-        ref={bellRef}
-        className="fixed bottom-6 right-6 z-50"
-        style={{
-          transform: `translateY(${getAdaptiveScrollTransform()}px)`,
-          transition: 'transform 0.15s ease-out'
-        }}
-      >
-        <Button
-          onClick={() => setIsNotificationsModalOpen(true)}
-          className="relative h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700"
-        >
-          <Bell className="w-6 h-6 text-white" />
-          {unreadCount > 0 && (
-            <Badge className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0 animate-pulse">
-              {unreadCount}
-            </Badge>
-          )}
-        </Button>
-      </div>
     </div>
   );
 }

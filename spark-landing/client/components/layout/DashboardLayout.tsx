@@ -1,20 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Menu as MenuIcon, 
-  ShoppingCart, 
-  Calendar, 
-  Users, 
-  BarChart3, 
-  ChevronLeft, 
-  Sun, 
+import {
+  LayoutDashboard,
+  Menu as MenuIcon,
+  ShoppingCart,
+  Calendar,
+  Users,
+  BarChart3,
+  ChevronLeft,
+  Sun,
   Moon,
   User,
   ChevronDown,
   Settings,
   LogOut,
-  Eye,
   X,
   Store
 } from 'lucide-react';
@@ -23,6 +22,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import AccountPreferencesModal from '../modals/AccountPreferencesModal';
 import ViewAccountModal from '../modals/ViewAccountModal';
 import RestaurantPreferencesModal from '../modals/RestaurantPreferencesModal';
+import GlobalNotificationCenter from '../GlobalNotificationCenter';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -425,6 +425,9 @@ export default function DashboardLayout({ children, currentPage = 'dashboard', o
       <AccountPreferencesModal isOpen={isAccountPreferencesOpen} onClose={() => setIsAccountPreferencesOpen(false)} />
       <ViewAccountModal isOpen={isViewAccountOpen} onClose={() => setIsViewAccountOpen(false)} />
       <RestaurantPreferencesModal isOpen={isRestaurantPreferencesOpen} onClose={() => setIsRestaurantPreferencesOpen(false)} />
+
+      {/* Global Notification Center */}
+      <GlobalNotificationCenter />
     </div>
   );
 }

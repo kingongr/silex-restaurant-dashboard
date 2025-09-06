@@ -1,306 +1,304 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 
-interface AccessibilityOptions {
-  trapFocus?: boolean;
-  autoFocus?: boolean;
-  closeOnEscape?: boolean;
-  closeOnOutsideClick?: boolean;
-  announceChanges?: boolean;
-  restoreFocus?: boolean;
-  focusFirstElement?: boolean;
-  focusLastElement?: boolean;
-}
+// Hook for managing focus in modals
+export const useModalFocus = (isOpen: boolean, autoFocus: boolean = true) => {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<Element | null>(null);
 
-interface AccessibilityState {
-  isFocused: boolean;
-  focusableElements: HTMLElement[];
-  currentFocusIndex: number;
-  isTrapped: boolean;
-}
-
-export function useAccessibility(
-  isOpen: boolean,
-  onClose?: () => void,
-  options: AccessibilityOptions = {}
-) {
-  const {
-    trapFocus = true,
-    autoFocus = true,
-    closeOnEscape = true,
-    closeOnOutsideClick = true,
-    announceChanges = true,
-    restoreFocus = true,
-    focusFirstElement = true,
-    focusLastElement = false
-  } = options;
-
-  const [accessibilityState, setAccessibilityState] = useState<AccessibilityState>({
-    isFocused: false,
-    focusableElements: [],
-    currentFocusIndex: 0,
-    isTrapped: false
-  });
-
-  const containerRef = useRef<HTMLDivElement>(null);
-  const previousFocusRef = useRef<HTMLElement | null>(null);
-  const focusableElementsRef = useRef<HTMLElement[]>([]);
-
-  // Get all focusable elements within the container
-  const getFocusableElements = useCallback((): HTMLElement[] => {
-    if (!containerRef.current) return [];
-
-    const focusableSelectors = [
-      'button:not([disabled])',
-      'input:not([disabled])',
-      'select:not([disabled])',
-      'textarea:not([disabled])',
-      'a[href]',
-      'area[href]',
-      'iframe',
-      'object',
-      'embed',
-      '[tabindex]:not([tabindex="-1"])',
-      '[contenteditable="true"]'
-    ];
-
-    const elements = containerRef.current.querySelectorAll(focusableSelectors.join(', '));
-    return Array.from(elements) as HTMLElement[];
-  }, []);
-
-  // Focus a specific element
-  const focusElement = useCallback((element: HTMLElement | null) => {
-    if (element && typeof element.focus === 'function') {
-      element.focus();
-      setAccessibilityState(prev => ({
-        ...prev,
-        isFocused: true,
-        currentFocusIndex: focusableElementsRef.current.indexOf(element)
-      }));
-    }
-  }, []);
-
-  // Focus the first focusable element
-  const focusFirstElementCallback = useCallback(() => {
-    const elements = getFocusableElements();
-    if (elements.length > 0) {
-      focusElement(elements[0]);
-    }
-  }, [getFocusableElements, focusElement]);
-
-  // Focus the last focusable element
-  const focusLastElementCallback = useCallback(() => {
-    const elements = getFocusableElements();
-    if (elements.length > 0) {
-      focusElement(elements[elements.length - 1]);
-    }
-  }, [getFocusableElements, focusElement]);
-
-  // Focus the next element
-  const focusNextElement = useCallback(() => {
-    const elements = focusableElementsRef.current;
-    if (elements.length === 0) return;
-
-    const nextIndex = (accessibilityState.currentFocusIndex + 1) % elements.length;
-    focusElement(elements[nextIndex]);
-  }, [accessibilityState.currentFocusIndex, focusElement]);
-
-  // Focus the previous element
-  const focusPreviousElement = useCallback(() => {
-    const elements = focusableElementsRef.current;
-    if (elements.length === 0) return;
-
-    const prevIndex = accessibilityState.currentFocusIndex === 0 
-      ? elements.length - 1 
-      : accessibilityState.currentFocusIndex - 1;
-    focusElement(elements[prevIndex]);
-  }, [accessibilityState.currentFocusIndex, focusElement]);
-
-  // Handle keyboard navigation
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (!isOpen) return;
-
-    switch (event.key) {
-      case 'Tab':
-        if (trapFocus) {
-          event.preventDefault();
-          if (event.shiftKey) {
-            focusPreviousElement();
-          } else {
-            focusNextElement();
-          }
-        }
-        break;
-
-      case 'Escape':
-        if (closeOnEscape && onClose) {
-          event.preventDefault();
-          onClose();
-        }
-        break;
-
-      case 'ArrowDown':
-      case 'ArrowRight':
-        if (trapFocus) {
-          event.preventDefault();
-          focusNextElement();
-        }
-        break;
-
-      case 'ArrowUp':
-      case 'ArrowLeft':
-        if (trapFocus) {
-          event.preventDefault();
-          focusPreviousElement();
-        }
-        break;
-
-      case 'Home':
-        if (trapFocus) {
-          event.preventDefault();
-          focusFirstElementCallback();
-        }
-        break;
-
-      case 'End':
-        if (trapFocus) {
-          event.preventDefault();
-          focusLastElementCallback();
-        }
-        break;
-    }
-  }, [
-    isOpen,
-    trapFocus,
-    closeOnEscape,
-    onClose,
-    focusNextElement,
-    focusPreviousElement,
-    focusFirstElement,
-    focusLastElement
-  ]);
-
-  // Handle outside click
-  const handleOutsideClick = useCallback((event: MouseEvent) => {
-    if (!closeOnOutsideClick || !containerRef.current || !onClose) return;
-
-    if (!containerRef.current.contains(event.target as Node)) {
-      onClose();
-    }
-  }, [closeOnOutsideClick, onClose]);
-
-  // Announce changes to screen readers
-  const announceChange = useCallback((message: string) => {
-    if (!announceChanges) return;
-
-    // Create or update live region
-    let liveRegion = document.getElementById('accessibility-live-region');
-    if (!liveRegion) {
-      liveRegion = document.createElement('div');
-      liveRegion.id = 'accessibility-live-region';
-      liveRegion.setAttribute('aria-live', 'polite');
-      liveRegion.setAttribute('aria-atomic', 'true');
-      liveRegion.className = 'sr-only';
-      document.body.appendChild(liveRegion);
-    }
-
-    liveRegion.textContent = message;
-  }, [announceChanges]);
-
-  // Save current focus before opening
-  const saveCurrentFocus = useCallback(() => {
-    if (restoreFocus) {
-      previousFocusRef.current = document.activeElement as HTMLElement;
-    }
-  }, [restoreFocus]);
-
-  // Restore focus after closing
-  const restorePreviousFocus = useCallback(() => {
-    if (restoreFocus && previousFocusRef.current) {
-      focusElement(previousFocusRef.current);
-      previousFocusRef.current = null;
-    }
-  }, [restoreFocus, focusElement]);
-
-  // Initialize accessibility when modal opens
   useEffect(() => {
     if (isOpen) {
-      // Save current focus
-      saveCurrentFocus();
+      // Store the currently focused element
+      previousFocusRef.current = document.activeElement;
 
-      // Get focusable elements
-      const elements = getFocusableElements();
-      focusableElementsRef.current = elements;
+      if (autoFocus && modalRef.current) {
+        // Find the first focusable element in the modal
+        const focusableElements = modalRef.current.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
 
-      // Update state
-      setAccessibilityState(prev => ({
-        ...prev,
-        focusableElements: elements,
-        isTrapped: trapFocus
-      }));
-
-      // Auto-focus first element
-      if (autoFocus && focusFirstElement && elements.length > 0) {
-        setTimeout(() => focusFirstElementCallback(), 100);
+        const firstFocusableElement = focusableElements[0] as HTMLElement;
+        if (firstFocusableElement) {
+          firstFocusableElement.focus();
+        } else {
+          // Fallback to modal container
+          modalRef.current.focus();
+        }
       }
-
-      // Announce modal opening
-      if (announceChanges) {
-        announceChange('Modal opened. Use Tab to navigate, Escape to close.');
-      }
-
-      // Add event listeners
-      document.addEventListener('keydown', handleKeyDown);
-      document.addEventListener('mousedown', handleOutsideClick);
-
-      return () => {
-        document.removeEventListener('keydown', handleKeyDown);
-        document.removeEventListener('mousedown', handleOutsideClick);
-      };
     } else {
       // Restore focus when modal closes
-      restorePreviousFocus();
+      if (previousFocusRef.current && 'focus' in previousFocusRef.current) {
+        (previousFocusRef.current as HTMLElement).focus();
+      }
     }
-  }, [
-    isOpen,
-    autoFocus,
-    focusFirstElement,
-    trapFocus,
-    announceChanges,
-    announceChange,
-    handleKeyDown,
-    handleOutsideClick,
-    saveCurrentFocus,
-    restorePreviousFocus
-  ]);
+  }, [isOpen, autoFocus]);
 
-  // Update focusable elements when content changes
-  useEffect(() => {
-    if (isOpen) {
-      const elements = getFocusableElements();
-      focusableElementsRef.current = elements;
-      setAccessibilityState(prev => ({
-        ...prev,
-        focusableElements: elements
-      }));
+  // Handle escape key
+  const handleEscapeKey = useCallback((event: KeyboardEvent) => {
+    if (event.key === 'Escape' && isOpen) {
+      event.stopPropagation();
     }
-  }, [isOpen, getFocusableElements]);
+  }, [isOpen]);
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => document.removeEventListener('keydown', handleEscapeKey);
+  }, [handleEscapeKey]);
 
   return {
-    // Refs
-    containerRef,
-    
-    // State
-    accessibilityState,
-    
-    // Actions
-    focusElement,
-    focusFirstElement: focusFirstElementCallback,
-    focusLastElement: focusLastElementCallback,
-    focusNextElement,
-    focusPreviousElement,
-    announceChange,
-    
-    // Utilities
-    getFocusableElements
+    modalRef,
+    focusModal: () => modalRef.current?.focus(),
   };
-}
+};
+
+// Hook for managing form field accessibility
+export const useFormAccessibility = () => {
+  const announceError = useCallback((fieldId: string, errorMessage: string) => {
+    const field = document.getElementById(fieldId);
+    if (field) {
+      field.setAttribute('aria-invalid', 'true');
+      field.setAttribute('aria-describedby', `${fieldId}-error`);
+
+      // Update or create error message element
+      let errorElement = document.getElementById(`${fieldId}-error`);
+      if (!errorElement) {
+        errorElement = document.createElement('div');
+        errorElement.id = `${fieldId}-error`;
+        errorElement.setAttribute('role', 'alert');
+        errorElement.setAttribute('aria-live', 'polite');
+        errorElement.className = 'sr-only'; // Screen reader only
+        field.parentNode?.appendChild(errorElement);
+      }
+      errorElement.textContent = errorMessage;
+    }
+  }, []);
+
+  const clearError = useCallback((fieldId: string) => {
+    const field = document.getElementById(fieldId);
+    if (field) {
+      field.removeAttribute('aria-invalid');
+      field.removeAttribute('aria-describedby');
+
+      const errorElement = document.getElementById(`${fieldId}-error`);
+      if (errorElement) {
+        errorElement.remove();
+      }
+    }
+  }, []);
+
+  const announceSuccess = useCallback((fieldId: string, successMessage: string) => {
+    const field = document.getElementById(fieldId);
+    if (field) {
+      // Remove error state
+      field.removeAttribute('aria-invalid');
+
+      // Announce success (optional - for important confirmations)
+      const announcement = document.createElement('div');
+      announcement.setAttribute('role', 'status');
+      announcement.setAttribute('aria-live', 'polite');
+      announcement.className = 'sr-only';
+      announcement.textContent = successMessage;
+
+      document.body.appendChild(announcement);
+
+      // Clean up after announcement
+      setTimeout(() => {
+        document.body.removeChild(announcement);
+      }, 1000);
+    }
+  }, []);
+
+  return {
+    announceError,
+    clearError,
+    announceSuccess,
+  };
+};
+
+// Hook for managing ARIA live regions
+export const useAriaLive = (priority: 'polite' | 'assertive' = 'polite') => {
+  const liveRegionRef = useRef<HTMLDivElement>(null);
+
+  const announce = useCallback((message: string) => {
+    if (liveRegionRef.current) {
+      liveRegionRef.current.textContent = message;
+    }
+  }, []);
+
+  const clear = useCallback(() => {
+    if (liveRegionRef.current) {
+      liveRegionRef.current.textContent = '';
+    }
+  }, []);
+
+  return {
+    liveRegionRef,
+    announce,
+    clear,
+    LiveRegion: () => (
+      <div
+        ref={liveRegionRef}
+        aria-live={priority}
+        aria-atomic="true"
+        className="sr-only"
+      />
+    ),
+  };
+};
+
+// Hook for managing skip links
+export const useSkipLinks = () => {
+  useEffect(() => {
+    // Create skip links for keyboard navigation
+    const skipLinks = [
+      { href: '#main-content', text: 'Skip to main content' },
+      { href: '#navigation', text: 'Skip to navigation' },
+      { href: '#search', text: 'Skip to search' },
+    ];
+
+    skipLinks.forEach(({ href, text }) => {
+      const existingLink = document.querySelector(`a[href="${href}"]`);
+      if (!existingLink) {
+        const link = document.createElement('a');
+        link.href = href;
+        link.textContent = text;
+        link.className = 'skip-link sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded';
+        document.body.insertBefore(link, document.body.firstChild);
+      }
+    });
+
+    // Add focus styles for skip links
+    const style = document.createElement('style');
+    style.textContent = `
+      .skip-link:focus {
+        position: static !important;
+        width: auto !important;
+        height: auto !important;
+        clip: auto !important;
+        clip-path: none !important;
+        overflow: visible !important;
+        white-space: normal !important;
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      // Cleanup skip links on unmount
+      skipLinks.forEach(({ href }) => {
+        const link = document.querySelector(`a[href="${href}"]`);
+        if (link) {
+          link.remove();
+        }
+      });
+      document.head.removeChild(style);
+    };
+  }, []);
+};
+
+// Hook for managing modal accessibility
+export const useModalAccessibility = (isOpen: boolean, title: string) => {
+  const { modalRef } = useModalFocus(isOpen);
+  const { LiveRegion, announce } = useAriaLive('assertive');
+
+  useEffect(() => {
+    if (isOpen) {
+      // Announce modal opening
+      announce(`${title} dialog opened`);
+
+      // Prevent body scroll
+      document.body.style.overflow = 'hidden';
+
+      // Set modal as the main content for screen readers
+      const modal = modalRef.current;
+      if (modal) {
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-labelledby', 'modal-title');
+        modal.setAttribute('aria-describedby', 'modal-description');
+      }
+    } else {
+      // Restore body scroll
+      document.body.style.overflow = '';
+
+      // Announce modal closing
+      announce(`${title} dialog closed`);
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen, title, announce, modalRef]);
+
+  return {
+    modalRef,
+    LiveRegion,
+    announce,
+  };
+};
+
+// Hook for managing form submission accessibility
+export const useFormSubmission = () => {
+  const { announce } = useAriaLive('assertive');
+
+  const announceSubmissionStart = useCallback((formName: string) => {
+    announce(`Submitting ${formName} form...`);
+  }, [announce]);
+
+  const announceSubmissionSuccess = useCallback((formName: string, message?: string) => {
+    announce(message || `${formName} form submitted successfully`);
+  }, [announce]);
+
+  const announceSubmissionError = useCallback((formName: string, errorMessage: string) => {
+    announce(`Error submitting ${formName} form: ${errorMessage}`);
+  }, [announce]);
+
+  return {
+    announceSubmissionStart,
+    announceSubmissionSuccess,
+    announceSubmissionError,
+  };
+};
+
+// Utility function to create accessible form field props
+export const createAccessibleFieldProps = (
+  id: string,
+  label: string,
+  error?: string,
+  description?: string,
+  required?: boolean
+) => {
+  const baseProps = {
+    id,
+    'aria-labelledby': `${id}-label`,
+    'aria-required': required || false,
+  };
+
+  if (error) {
+    return {
+      ...baseProps,
+      'aria-invalid': true,
+      'aria-describedby': `${id}-error`,
+    };
+  }
+
+  if (description) {
+    return {
+      ...baseProps,
+      'aria-describedby': `${id}-description`,
+    };
+  }
+
+  return baseProps;
+};
+
+// Utility function to create accessible button props
+export const createAccessibleButtonProps = (
+  label: string,
+  loading?: boolean,
+  disabled?: boolean
+) => {
+  return {
+    'aria-label': loading ? `${label} - Loading` : label,
+    'aria-disabled': disabled || loading || false,
+    disabled: disabled || loading || false,
+  };
+};

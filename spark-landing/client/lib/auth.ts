@@ -93,7 +93,6 @@ export const auth = {
           })
 
         if (profileError) {
-          console.error('Error creating user profile:', profileError)
         }
 
         const authUser: AuthUser = {

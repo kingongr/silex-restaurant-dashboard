@@ -1,10 +1,9 @@
 import React from 'react';
-import { getModalClasses, MODAL_CONFIGS } from '../../utils/modalSizes';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
-import { User, Mail, Phone, MapPin, Calendar, Shield } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, Shield, Sparkles } from 'lucide-react';
 
 interface ViewAccountModalProps {
   isOpen: boolean;
@@ -25,18 +24,27 @@ export default function ViewAccountModal({ isOpen, onClose }: ViewAccountModalPr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={getModalClasses('DETAIL')}>
-        <div className="p-6 sm:p-8">
-          <DialogHeader className="mb-6 sm:mb-8">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
-                <User className="w-5 h-5 text-white" />
+      <DialogContent className="max-w-2xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-0 shadow-2xl rounded-3xl overflow-hidden max-h-[85vh] overflow-y-auto ml-[132px]">
+        {/* Animated background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-white/30 to-indigo-50/50 dark:from-blue-950/20 dark:via-gray-900/30 dark:to-indigo-950/20 pointer-events-none" />
+
+        <div className="relative p-5 lg:p-6">
+          {/* Enhanced Header */}
+          <DialogHeader className="mb-6 lg:mb-7">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="relative">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                  <Sparkles className="w-2.5 h-2.5 text-white" />
+                </div>
               </div>
               <div>
-                <DialogTitle className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
+                <DialogTitle className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent">
                   Account Information
                 </DialogTitle>
-                <DialogDescription className="text-gray-600 dark:text-gray-400">
+                <DialogDescription className="text-gray-600 dark:text-gray-400 mt-0.5 text-sm">
                   View your account details and information
                 </DialogDescription>
               </div>
@@ -45,28 +53,42 @@ export default function ViewAccountModal({ isOpen, onClose }: ViewAccountModalPr
 
           <div className="space-y-6">
             {/* Profile Summary */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center">
-                  <User className="w-8 h-8 text-white" />
+            <div className="group">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
+                  <User className="w-5 h-5 text-white" />
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{accountData.name}</h3>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="secondary" className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
-                      {accountData.status}
-                    </Badge>
-                    <Badge variant="outline">
-                      {accountData.role}
-                    </Badge>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Profile Summary</h3>
+              </div>
+
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center">
+                    <User className="w-8 h-8 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{accountData.name}</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="secondary" className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                        {accountData.status}
+                      </Badge>
+                      <Badge variant="outline">
+                        {accountData.role}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Contact Information */}
-            <div className="space-y-4">
-              <h4 className="font-semibold text-gray-900 dark:text-white">Contact Information</h4>
+            <div className="group">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/25">
+                  <Mail className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Contact Information</h3>
+              </div>
               
               <div className="space-y-3">
                 <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
@@ -98,8 +120,13 @@ export default function ViewAccountModal({ isOpen, onClose }: ViewAccountModalPr
             <Separator />
 
             {/* Account Details */}
-            <div className="space-y-4">
-              <h4 className="font-semibold text-gray-900 dark:text-white">Account Details</h4>
+            <div className="group">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/25">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Account Details</h3>
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
@@ -126,10 +153,10 @@ export default function ViewAccountModal({ isOpen, onClose }: ViewAccountModalPr
             </div>
 
             {/* Action Button */}
-            <div className="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
               <Button
                 onClick={onClose}
-                className="px-6 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl hover:opacity-90 transition-opacity duration-200 shadow-lg"
+                className="px-6 py-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 text-white rounded-xl hover:opacity-90 transition-opacity duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Close
               </Button>

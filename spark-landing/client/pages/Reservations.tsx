@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { DashboardDialog, DashboardDialogContent, DashboardDialogHeader, DashboardDialogTitle } from '../components/ui/dashboard-dialog';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
@@ -29,7 +30,8 @@ import {
   X,
   MessageSquare,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Star
 } from 'lucide-react';
 import BookTableModal from '../components/modals/BookTableModal';
 
@@ -72,8 +74,29 @@ export default function Reservations() {
   const [isEditReservationModalOpen, setIsEditReservationModalOpen] = useState(false);
   const [isCancelReservationModalOpen, setIsCancelReservationModalOpen] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
-  const [selectedDate, setSelectedDate] = useState(new Date(2024, 7, 26)); // August 26, 2024
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date(2024, 7, 1)); // August 1, 2024
+
+  // Form state for edit reservation modal
+  const [editFormData, setEditFormData] = useState<{
+    customerName: string;
+    partySize: number;
+    email: string;
+    phone: string;
+    date: string;
+    time: string;
+    specialRequests: string;
+    tableId: number | null;
+  }>({
+    customerName: '',
+    partySize: 1,
+    email: '',
+    phone: '',
+    date: '',
+    time: '',
+    specialRequests: '',
+    tableId: null
+  });
 
   // Function to show toast notifications
   const showNotificationToast = (type: 'success' | 'info' | 'warning' | 'error') => {
@@ -187,7 +210,7 @@ export default function Reservations() {
   ];
 
   // Mock reservations data with table IDs
-  const mockReservations: Reservation[] = [
+  const [reservations, setReservations] = useState<Reservation[]>([
     {
       id: '1',
       customerName: 'John Smith',
@@ -256,7 +279,7 @@ export default function Reservations() {
       status: 'pending',
       createdAt: '2024-08-24T16:20:00Z'
     }
-  ];
+  ]);
 
   // Get available tables for a specific time and party size
   const getAvailableTables = (time: string, partySize: number) => {
@@ -274,7 +297,7 @@ export default function Reservations() {
 
   // Filter reservations by selected date
   const getReservationsForDate = (dateString: string) => {
-    return mockReservations.filter(r => r.date === dateString);
+    return reservations.filter(r => r.date === dateString);
   };
 
   // Generate calendar days
@@ -300,7 +323,7 @@ export default function Reservations() {
         dateString,
         isCurrentMonth: currentDate.getMonth() === month,
         isToday: dateString === new Date().toISOString().split('T')[0],
-        isSelected: dateString === selectedDate.toISOString().split('T')[0],
+        isSelected: selectedDate ? dateString === selectedDate.toISOString().split('T')[0] : false,
         hasReservations: reservations.length > 0,
         reservationCount: reservations.length
       });
@@ -311,24 +334,107 @@ export default function Reservations() {
 
   // Navigation functions
   const goToPreviousMonth = () => {
-    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+    try {
+      const newMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
+
+      // Prevent navigation too far back (e.g., before 2020)
+      if (newMonth.getFullYear() < 2020) {
+        toast({
+          title: "Navigation Limit",
+          description: "Cannot navigate before 2020",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setCurrentMonth(newMonth);
+      setSelectedDate(null); // Clear selection when changing months
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to navigate to previous month",
+        variant: "destructive",
+      });
+    }
   };
 
   const goToNextMonth = () => {
-    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+    try {
+      const newMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
+
+      // Prevent navigation too far forward (e.g., more than 2 years ahead)
+      const maxDate = new Date();
+      maxDate.setFullYear(maxDate.getFullYear() + 2);
+
+      if (newMonth > maxDate) {
+        toast({
+          title: "Navigation Limit",
+          description: "Cannot navigate more than 2 years ahead",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setCurrentMonth(newMonth);
+      setSelectedDate(null); // Clear selection when changing months
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to navigate to next month",
+        variant: "destructive",
+      });
+    }
   };
 
   const goToToday = () => {
-    const today = new Date();
-    setSelectedDate(today);
-    setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1));
+    try {
+      const today = new Date();
+      setSelectedDate(today);
+      setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1));
+
+      toast({
+        title: "Navigated to Today",
+        description: `Showing reservations for ${today.toLocaleDateString()}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to navigate to today",
+        variant: "destructive",
+      });
+    }
   };
 
   // Handle date selection
   const handleDateSelect = (date: Date) => {
-    setSelectedDate(date);
-    if (date.getMonth() !== currentMonth.getMonth()) {
-      setCurrentMonth(new Date(date.getFullYear(), date.getMonth(), 1));
+    try {
+      setSelectedDate(date);
+
+      // If selected date is in a different month, update the current month view
+      if (date.getMonth() !== currentMonth.getMonth() || date.getFullYear() !== currentMonth.getFullYear()) {
+        setCurrentMonth(new Date(date.getFullYear(), date.getMonth(), 1));
+      }
+
+      // Show reservations for selected date
+      const dateString = date.toISOString().split('T')[0];
+      const reservationsForDate = getReservationsForDate(dateString);
+      if (reservationsForDate.length > 0) {
+        toast({
+          title: "Reservations Found",
+          description: `Found ${reservationsForDate.length} reservation(s) for ${date.toLocaleDateString()}`,
+        });
+      } else {
+        toast({
+          title: "No Reservations",
+          description: `No reservations found for ${date.toLocaleDateString()}`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to select date",
+        variant: "destructive",
+      });
     }
   };
 
@@ -339,8 +445,108 @@ export default function Reservations() {
   };
 
   const handleEditReservation = () => {
+    if (!selectedReservation) return;
+
+    // Initialize form data with current reservation values
+    setEditFormData({
+      customerName: selectedReservation.customerName,
+      partySize: selectedReservation.partySize,
+      email: selectedReservation.email,
+      phone: selectedReservation.phone,
+      date: selectedReservation.date,
+      time: selectedReservation.time,
+      specialRequests: selectedReservation.specialRequests || '',
+      tableId: selectedReservation.tableId
+    });
+
     setIsReservationDetailModalOpen(false);
     setIsEditReservationModalOpen(true);
+  };
+
+  const handleSaveReservationChanges = () => {
+    if (!selectedReservation) {
+      toast({
+        title: "Error",
+        description: "No reservation selected for editing",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Get form values from state
+      const { customerName, partySize, email, phone, date, time, specialRequests, tableId } = editFormData;
+
+      // Validate required fields
+      if (!customerName?.trim()) {
+        toast({
+          title: "Validation Error",
+          description: "Customer name is required",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!date) {
+        toast({
+          title: "Validation Error",
+          description: "Date is required",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!time) {
+        toast({
+          title: "Validation Error",
+          description: "Time is required",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (partySize <= 0) {
+        toast({
+          title: "Validation Error",
+          description: "Party size must be greater than 0",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update reservation (in a real app, this would call an API)
+      const updatedReservation = {
+        ...selectedReservation,
+        customerName,
+        partySize,
+        email,
+        phone,
+        date,
+        time,
+        specialRequests,
+        tableId,
+      };
+
+      // Update the reservations list
+      setReservations(reservations.map(res =>
+        res.id === selectedReservation.id ? updatedReservation : res
+      ));
+
+      // Close modal and show success message
+      setIsEditReservationModalOpen(false);
+      setSelectedReservation(updatedReservation);
+
+      toast({
+        title: "Reservation Updated",
+        description: `Reservation for ${customerName} has been successfully updated`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save reservation changes",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCancelReservation = () => {
@@ -350,7 +556,6 @@ export default function Reservations() {
 
   const confirmCancelReservation = () => {
     // In a real app, this would update the database
-    console.log('Cancelling reservation:', selectedReservation?.id);
     setIsCancelReservationModalOpen(false);
     setSelectedReservation(null);
   };
@@ -361,7 +566,7 @@ export default function Reservations() {
   };
 
   // Get selected date reservations
-  const selectedDateReservations = getReservationsForDate(selectedDate.toISOString().split('T')[0]);
+  const selectedDateReservations = selectedDate ? getReservationsForDate(selectedDate.toISOString().split('T')[0]) : [];
 
   return (
     <>
@@ -515,12 +720,12 @@ export default function Reservations() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CalendarIcon className="w-5 h-5" />
-              Reservations for {selectedDate.toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
+              Reservations for {selectedDate ? selectedDate.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              }) : 'No Date Selected'}
               <Badge variant="secondary" className="ml-2">
                 {selectedDateReservations.length} reservation{selectedDateReservations.length !== 1 ? 's' : ''}
               </Badge>
@@ -691,25 +896,46 @@ export default function Reservations() {
       </Dialog>
 
       {/* Edit Reservation Modal */}
-      <Dialog open={isEditReservationModalOpen} onOpenChange={setIsEditReservationModalOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Edit className="w-5 h-5" />
-              Edit Reservation
-            </DialogTitle>
-          </DialogHeader>
+      <DashboardDialog open={isEditReservationModalOpen} onOpenChange={setIsEditReservationModalOpen}>
+        <DashboardDialogContent className="max-w-3xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-0 shadow-2xl rounded-3xl overflow-hidden max-h-[85vh] overflow-y-auto">
+          {/* Animated background gradient */}
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 via-white/30 to-pink-50/50 dark:from-purple-950/20 dark:via-gray-900/30 dark:to-pink-950/20 pointer-events-none" />
+          <div className="relative p-5 lg:p-6">
+            <DashboardDialogHeader className="mb-6 lg:mb-7">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="relative">
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/25">
+                    <Edit className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                    <Star className="w-2.5 h-2.5 text-white" />
+                  </div>
+                </div>
+                <div>
+                  <DashboardDialogTitle className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent">
+                    Edit Reservation
+                  </DashboardDialogTitle>
+                </div>
+              </div>
+            </DashboardDialogHeader>
           
           {selectedReservation && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="edit-customer">Customer Name</Label>
-                  <Input id="edit-customer" defaultValue={selectedReservation.customerName} />
+                  <Input
+                    id="edit-customer"
+                    value={editFormData.customerName}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, customerName: e.target.value }))}
+                  />
                 </div>
                 <div>
                   <Label htmlFor="edit-party">Party Size</Label>
-                  <Select defaultValue={selectedReservation.partySize.toString()}>
+                  <Select
+                    value={editFormData.partySize.toString()}
+                    onValueChange={(value) => setEditFormData(prev => ({ ...prev, partySize: parseInt(value) || 1 }))}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -724,19 +950,36 @@ export default function Reservations() {
                 </div>
                 <div>
                   <Label htmlFor="edit-email">Email</Label>
-                  <Input id="edit-email" type="email" defaultValue={selectedReservation.email} />
+                  <Input
+                    id="edit-email"
+                    type="email"
+                    value={editFormData.email}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
+                  />
                 </div>
                 <div>
                   <Label htmlFor="edit-phone">Phone</Label>
-                  <Input id="edit-phone" defaultValue={selectedReservation.phone} />
+                  <Input
+                    id="edit-phone"
+                    value={editFormData.phone}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  />
                 </div>
                 <div>
                   <Label htmlFor="edit-date">Date</Label>
-                  <Input id="edit-date" type="date" defaultValue={selectedReservation.date} />
+                  <Input
+                    id="edit-date"
+                    type="date"
+                    value={editFormData.date}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, date: e.target.value }))}
+                  />
                 </div>
                 <div>
                   <Label htmlFor="edit-time">Time</Label>
-                  <Select defaultValue={selectedReservation.time}>
+                  <Select
+                    value={editFormData.time}
+                    onValueChange={(value) => setEditFormData(prev => ({ ...prev, time: value }))}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -774,9 +1017,10 @@ export default function Reservations() {
 
               <div>
                 <Label htmlFor="edit-requests">Special Requests</Label>
-                <Textarea 
-                  id="edit-requests" 
-                  defaultValue={selectedReservation.specialRequests || ''}
+                <Textarea
+                  id="edit-requests"
+                  value={editFormData.specialRequests}
+                  onChange={(e) => setEditFormData({ ...editFormData, specialRequests: e.target.value })}
                   placeholder="Any special requests or notes..."
                 />
               </div>
@@ -789,14 +1033,15 @@ export default function Reservations() {
                 >
                   Cancel
                 </Button>
-                <Button className="flex-1">
+                <Button onClick={handleSaveReservationChanges} className="flex-1">
                   Save Changes
                 </Button>
               </div>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
+          </div>
+        </DashboardDialogContent>
+      </DashboardDialog>
 
       {/* Cancel Reservation Confirmation Modal */}
       <Dialog open={isCancelReservationModalOpen} onOpenChange={setIsCancelReservationModalOpen}>

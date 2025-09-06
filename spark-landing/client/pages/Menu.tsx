@@ -1,6 +1,7 @@
 import { useState } from 'react';
 // DashboardLayout removed - already wrapped by App.tsx routing
 import AddMenuItemModal from '@/components/modals/AddMenuItemModal';
+import EditMenuItemModal from '@/components/modals/EditMenuItemModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -154,6 +155,8 @@ const mockMenuItems: MenuItem[] = [
 
 export default function Menu() {
   const [isAddMenuItemModalOpen, setIsAddMenuItemModalOpen] = useState(false);
+  const [isEditMenuItemModalOpen, setIsEditMenuItemModalOpen] = useState(false);
+  const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
   const [menuItems, setMenuItems] = useState<MenuItem[]>(mockMenuItems);
   const [selectedCategory, setSelectedCategory] = useState('All Items');
   const [searchQuery, setSearchQuery] = useState('');
@@ -177,9 +180,22 @@ export default function Menu() {
   });
 
   const toggleAvailability = (itemId: string) => {
-    setMenuItems(menuItems.map(item => 
+    setMenuItems(menuItems.map(item =>
       item.id === itemId ? { ...item, available: !item.available } : item
     ));
+  };
+
+  const handleEditMenuItem = (item: MenuItem) => {
+    setSelectedMenuItem(item);
+    setIsEditMenuItemModalOpen(true);
+  };
+
+  const handleSaveEditedMenuItem = (updatedItem: MenuItem) => {
+    setMenuItems(menuItems.map(item =>
+      item.id === updatedItem.id ? updatedItem : item
+    ));
+    setIsEditMenuItemModalOpen(false);
+    setSelectedMenuItem(null);
   };
 
   // Handle adding new menu items and updating categories
@@ -392,7 +408,12 @@ export default function Menu() {
                       </div>
 
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="flex-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => handleEditMenuItem(item)}
+                        >
                           <Edit className="w-3 h-3 mr-1" />
                           Edit
                         </Button>
@@ -469,7 +490,11 @@ export default function Menu() {
                         </div>
                         
                         <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditMenuItem(item)}
+                          >
                             <Edit className="w-3 h-3" />
                           </Button>
                           <Button 
@@ -494,10 +519,17 @@ export default function Menu() {
       </div>
 
       {/* Add Menu Item Modal */}
-      <AddMenuItemModal 
+      <AddMenuItemModal
         isOpen={isAddMenuItemModalOpen}
         onClose={() => setIsAddMenuItemModalOpen(false)}
         onAdd={handleAddMenuItem}
+      />
+
+      <EditMenuItemModal
+        isOpen={isEditMenuItemModalOpen}
+        onClose={() => setIsEditMenuItemModalOpen(false)}
+        menuItem={selectedMenuItem}
+        onSave={handleSaveEditedMenuItem}
       />
 
 

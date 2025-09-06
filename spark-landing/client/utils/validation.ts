@@ -1,18 +1,131 @@
 // Standardized validation functions for consistent use across the app
+import { parseTimeToMinutes, isWithinBusinessHours } from './time';
 
 /**
- * Phone Number Validation and Formatting
+ * Phone Number Metadata and Country-Specific Formatting
+ * Supports international phone number formats with proper digit limits
+ */
+
+export interface PhoneMetadata {
+  country: string;
+  countryCode: string;
+  digitCount: number;
+  formatPattern: string;
+  example: string;
+  placeholder: string;
+}
+
+// Phone metadata for supported countries
+export const PHONE_METADATA: Record<string, PhoneMetadata> = {
+  'US': {
+    country: 'US',
+    countryCode: '+1',
+    digitCount: 10,
+    formatPattern: 'XXX-XXX-XXXX',
+    example: '555-123-4567',
+    placeholder: 'XXX-XXX-XXXX'
+  },
+  'CA': {
+    country: 'CA',
+    countryCode: '+1',
+    digitCount: 10,
+    formatPattern: 'XXX-XXX-XXXX',
+    example: '555-123-4567',
+    placeholder: 'XXX-XXX-XXXX'
+  },
+  'UK': {
+    country: 'UK',
+    countryCode: '+44',
+    digitCount: 10,
+    formatPattern: 'XXXX XXX XXX',
+    example: '20 1234 5678',
+    placeholder: 'XXXX XXX XXX'
+  },
+  'FR': {
+    country: 'FR',
+    countryCode: '+33',
+    digitCount: 9,
+    formatPattern: 'X XX XX XX XX',
+    example: '1 23 45 67 89',
+    placeholder: 'X XX XX XX XX'
+  },
+  'DE': {
+    country: 'DE',
+    countryCode: '+49',
+    digitCount: 10,
+    formatPattern: 'XXX XXXXXXXX',
+    example: '30 12345678',
+    placeholder: 'XXX XXXXXXXX'
+  },
+  'JP': {
+    country: 'JP',
+    countryCode: '+81',
+    digitCount: 10,
+    formatPattern: 'XX-XXXX-XXXX',
+    example: '90-1234-5678',
+    placeholder: 'XX-XXXX-XXXX'
+  }
+};
+
+export const getPhoneMetadata = (countryCode: string): PhoneMetadata => {
+  // Extract country from country code format like '+1-US'
+  const country = countryCode.split('-')[1];
+  return PHONE_METADATA[country] || PHONE_METADATA['US'];
+};
+
+export const formatPhoneNumber = (value: string, countryCode: string = '+1-US'): string => {
+  const metadata = getPhoneMetadata(countryCode);
+  const digits = value.replace(/\D/g, '');
+
+  // Limit to the country's digit count
+  const limitedDigits = digits.slice(0, metadata.digitCount);
+
+  // Apply country-specific formatting
+  return formatPhoneDigits(limitedDigits, metadata);
+};
+
+export const formatPhoneDigits = (digits: string, metadata: PhoneMetadata): string => {
+  if (!digits) return '';
+
+  const format = metadata.formatPattern;
+  let formatted = '';
+  let digitIndex = 0;
+
+  for (let i = 0; i < format.length && digitIndex < digits.length; i++) {
+    const char = format[i];
+    if (char === 'X') {
+      formatted += digits[digitIndex];
+      digitIndex++;
+    } else {
+      formatted += char;
+    }
+  }
+
+  return formatted;
+};
+
+export const getPhoneMaxLength = (countryCode: string = '+1-US'): number => {
+  const metadata = getPhoneMetadata(countryCode);
+  return metadata.formatPattern.length;
+};
+
+export const getPhoneDigits = (formattedPhone: string): string => {
+  return formattedPhone.replace(/\D/g, '');
+};
+
+/**
+ * Phone Number Validation and Formatting (Legacy - for backward compatibility)
  * Formats phone numbers as (XXX) XXX-XXXX and limits to 10 digits
  */
-export const formatPhoneNumber = (value: string): string => {
+export const formatPhoneNumberLegacy = (value: string): string => {
   // Remove all non-digits
   const digits = value.replace(/\D/g, '');
-  
+
   // Limit to 10 digits
   if (digits.length > 10) {
     return value.slice(0, -1); // Remove the extra character
   }
-  
+
   // Format as (XXX) XXX-XXXX
   if (digits.length >= 6) {
     return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
@@ -24,14 +137,29 @@ export const formatPhoneNumber = (value: string): string => {
   return '';
 };
 
-export const validatePhoneNumber = (phone: string): boolean => {
+export const validatePhoneNumber = (phone: string, countryCode: string = '+1-US'): boolean => {
+  const metadata = getPhoneMetadata(countryCode);
+  const digits = phone.replace(/\D/g, '');
+  return digits.length === metadata.digitCount;
+};
+
+export const validatePhoneNumberLegacy = (phone: string): boolean => {
   const digits = phone.replace(/\D/g, '');
   return digits.length === 10;
 };
 
-export const getPhoneError = (phone: string): string => {
+export const getPhoneError = (phone: string, countryCode: string = '+1-US'): string => {
   if (!phone) return '';
-  if (!validatePhoneNumber(phone)) {
+  if (!validatePhoneNumber(phone, countryCode)) {
+    const metadata = getPhoneMetadata(countryCode);
+    return `Please enter a valid ${metadata.digitCount}-digit phone number`;
+  }
+  return '';
+};
+
+export const getPhoneErrorLegacy = (phone: string): string => {
+  if (!phone) return '';
+  if (!validatePhoneNumberLegacy(phone)) {
     return 'Please enter a valid 10-digit phone number';
   }
   return '';
@@ -240,12 +368,7 @@ export const validateBusinessHours = (
   openHour: number = 6, 
   closeHour: number = 23
 ): boolean => {
-  const [hours, minutes] = time.split(':').map(Number);
-  const timeInMinutes = hours * 60 + minutes;
-  const openInMinutes = openHour * 60;
-  const closeInMinutes = closeHour * 60;
-  
-  return timeInMinutes >= openInMinutes && timeInMinutes <= closeInMinutes;
+  return isWithinBusinessHours(time, openHour, closeHour);
 };
 
 export const getBusinessHoursError = (

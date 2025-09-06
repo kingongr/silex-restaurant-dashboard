@@ -68,7 +68,7 @@ export default function NotificationCenter({ isOpen, onClose }: NotificationCent
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden mx-4 sm:mx-6 lg:mx-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Bell className="w-5 h-5" />
@@ -134,7 +134,6 @@ export default function NotificationCenter({ isOpen, onClose }: NotificationCent
             size="sm"
             onClick={() => {
               // Mark all as read logic would go here
-              console.log('Mark all as read');
             }}
           >
             Mark all as read

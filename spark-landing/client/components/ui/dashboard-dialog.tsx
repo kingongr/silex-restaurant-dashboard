@@ -4,15 +4,12 @@ import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Z_INDEX } from "@/lib/z-index";
 
-const Dialog = DialogPrimitive.Root;
+const DashboardDialog = DialogPrimitive.Root;
+const DashboardDialogTrigger = DialogPrimitive.Trigger;
+const DashboardDialogPortal = DialogPrimitive.Portal;
+const DashboardDialogClose = DialogPrimitive.Close;
 
-const DialogTrigger = DialogPrimitive.Trigger;
-
-const DialogPortal = DialogPrimitive.Portal;
-
-const DialogClose = DialogPrimitive.Close;
-
-const DialogOverlay = React.forwardRef<
+const DashboardDialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
 >(({ className, ...props }, ref) => (
@@ -26,21 +23,30 @@ const DialogOverlay = React.forwardRef<
     {...props}
   />
 ));
-DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
+DashboardDialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
-const DialogContent = React.forwardRef<
+const DashboardDialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, ...props }, ref) => (
-  <DialogPortal>
-    <DialogOverlay />
+  <DashboardDialogPortal>
+    <DashboardDialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-[50%] top-20 grid w-full max-w-lg translate-x-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-20 data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-20 sm:rounded-lg",
+        // Base styles
+        "fixed grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg",
+        // Animations
+        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-20 data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-20",
+        // Positioning - Mobile: centered with top offset
+        "left-1/2 top-20 -translate-x-1/2",
+        // Desktop positioning with sidebar consideration
+        "md:translate-x-0 md:left-[280px] md:top-20",
+        // Collapsed sidebar adjustment
+        "[.sidebar-collapsed_&]:md:left-[80px]",
         className,
       )}
-      style={{ zIndex: Z_INDEX.MODAL }}
+      style={{ zIndex: Z_INDEX.DASHBOARD_MODAL }}
       {...props}
     >
       {children}
@@ -49,11 +55,11 @@ const DialogContent = React.forwardRef<
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>
-  </DialogPortal>
+  </DashboardDialogPortal>
 ));
-DialogContent.displayName = DialogPrimitive.Content.displayName;
+DashboardDialogContent.displayName = DialogPrimitive.Content.displayName;
 
-const DialogHeader = ({
+const DashboardDialogHeader = ({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
@@ -65,9 +71,9 @@ const DialogHeader = ({
     {...props}
   />
 );
-DialogHeader.displayName = "DialogHeader";
+DashboardDialogHeader.displayName = "DashboardDialogHeader";
 
-const DialogFooter = ({
+const DashboardDialogFooter = ({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
@@ -79,9 +85,9 @@ const DialogFooter = ({
     {...props}
   />
 );
-DialogFooter.displayName = "DialogFooter";
+DashboardDialogFooter.displayName = "DashboardDialogFooter";
 
-const DialogTitle = React.forwardRef<
+const DashboardDialogTitle = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
 >(({ className, ...props }, ref) => (
@@ -94,9 +100,9 @@ const DialogTitle = React.forwardRef<
     {...props}
   />
 ));
-DialogTitle.displayName = DialogPrimitive.Title.displayName;
+DashboardDialogTitle.displayName = DialogPrimitive.Title.displayName;
 
-const DialogDescription = React.forwardRef<
+const DashboardDialogDescription = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
 >(({ className, ...props }, ref) => (
@@ -106,17 +112,17 @@ const DialogDescription = React.forwardRef<
     {...props}
   />
 ));
-DialogDescription.displayName = DialogPrimitive.Description.displayName;
+DashboardDialogDescription.displayName = DialogPrimitive.Description.displayName;
 
 export {
-  Dialog,
-  DialogPortal,
-  DialogOverlay,
-  DialogClose,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogFooter,
-  DialogTitle,
-  DialogDescription,
+  DashboardDialog,
+  DashboardDialogTrigger,
+  DashboardDialogPortal,
+  DashboardDialogOverlay,
+  DashboardDialogClose,
+  DashboardDialogContent,
+  DashboardDialogHeader,
+  DashboardDialogFooter,
+  DashboardDialogTitle,
+  DashboardDialogDescription,
 };

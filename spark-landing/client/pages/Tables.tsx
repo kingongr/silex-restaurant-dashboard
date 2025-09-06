@@ -19,7 +19,7 @@ export default function Tables() {
 
 
   // Mock table data
-  const mockTables = [
+  const [mockTables, setMockTables] = useState([
     {
       id: 1,
       number: 1,
@@ -98,7 +98,7 @@ export default function Tables() {
       features: ['WiFi'],
       notes: 'Counter seating'
     }
-  ];
+  ]);
 
   const handleTableClick = (table: any) => {
     setSelectedTable(table);
@@ -118,29 +118,77 @@ export default function Tables() {
   };
 
   const confirmDeleteTable = () => {
-    if (tableToDelete) {
-      console.log('Deleting table:', tableToDelete.number);
-      // In a real app, this would call an API
+    if (!tableToDelete) {
+      alert('No table selected for deletion');
+      return;
+    }
+
+    try {
+
+      // Check if table has active reservations
+      if (tableToDelete.status === 'occupied' || tableToDelete.status === 'reserved') {
+        alert(`Cannot delete table ${tableToDelete.number} - it has active reservations or is currently occupied.`);
+        return;
+      }
+
+      // TODO: Implement actual delete logic with API call
+      // For demo purposes, simulate successful deletion
+      alert(`Table ${tableToDelete.number} has been successfully deleted.`);
+
       setIsDeleteConfirmOpen(false);
       setTableToDelete(null);
+      setSelectedTable(null);
+      setIsTableDetailsModalOpen(false);
+    } catch (error) {
+      alert('Failed to delete table. Please try again.');
     }
   };
 
   const handleStatusChange = (table: any, newStatus: string) => {
-    // Update the table status in the mock data
-    const updatedTables = mockTables.map(t => 
-      t.id === table.id ? { ...t, status: newStatus } : t
-    );
-    
-    // Update the selected table state to reflect the change
-    setSelectedTable(prev => prev ? { ...prev, status: newStatus } : null);
-    
-    // In a real app, this would call an API to update the database
-    console.log(`Table ${table.number} status changed from ${table.status} to ${newStatus}`);
-    
-    // Show success feedback (in a real app, this would be a toast notification)
-    // For now, we'll just log it
-    console.log(`✅ Table ${table.number} is now ${newStatus}`);
+    try {
+      if (!table) {
+        alert('No table selected');
+        return;
+      }
+
+      // Validate status transitions
+      if (!isValidTableStatusTransition(table.status, newStatus)) {
+        alert(`Cannot change table ${table.number} status from ${table.status} to ${newStatus}`);
+        return;
+      }
+
+      // Update the table status in the mock data
+      const updatedTables = mockTables.map(t =>
+        t.id === table.id ? { ...t, status: newStatus } : t
+      );
+      setMockTables(updatedTables);
+
+      // Update the selected table state to reflect the change
+      setSelectedTable(prev => prev ? { ...prev, status: newStatus } : null);
+
+      // In a real app, this would call an API to update the database
+
+      // Show success feedback
+      alert(`Table ${table.number} status changed to ${newStatus}`);
+
+      // Close modal after status change for better UX
+      setIsTableDetailsModalOpen(false);
+    } catch (error) {
+      alert('Failed to change table status. Please try again.');
+    }
+  };
+
+  // Validate table status transitions
+  const isValidTableStatusTransition = (currentStatus: string, newStatus: string): boolean => {
+    const validTransitions: Record<string, string[]> = {
+      available: ['reserved', 'occupied', 'cleaning'],
+      reserved: ['occupied', 'available', 'cleaning'],
+      occupied: ['cleaning'],
+      cleaning: ['available'],
+      maintenance: ['available']
+    };
+
+    return validTransitions[currentStatus]?.includes(newStatus) || false;
   };
 
   return (
